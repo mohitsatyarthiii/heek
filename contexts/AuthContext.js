@@ -13,8 +13,21 @@ export const AuthProvider = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user || null);
+      } catch (error) {
+        console.error("Auth error:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     checkUser();
-    
+
     // Listen for auth changes
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -25,14 +38,7 @@ export const AuthProvider = ({ children }) => {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const checkUser = async () => {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user || null);
-    setLoading(false);
-  };
+  }, []); // ✅ Empty dependency array - CRITICAL
 
   const signIn = async (email, password) => {
     try {
