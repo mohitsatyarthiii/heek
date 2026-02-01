@@ -6,7 +6,8 @@ import {
   Users, 
   CheckSquare, 
   Settings,
-  LogOut 
+  LogOut, 
+  BarChart
 } from "lucide-react";
 
 export default function Sidebar({ onLogout }) {
@@ -16,7 +17,7 @@ export default function Sidebar({ onLogout }) {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/creators", label: "Creators", icon: Users },
     { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: "/dashboard/campaigns", label: "Campaigns", icon: BarChart },
   ];
 
   return (
