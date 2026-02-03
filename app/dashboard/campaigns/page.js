@@ -239,7 +239,7 @@ export default function CampaignsPage() {
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-blue-500" />
             <div>
-              <h1 className="text-sm font-bold">Campaigns</h1>
+              <h1 className="text-sm font-bold">Executions</h1>
               <p className="text-xs text-muted-foreground">
                 {filteredCampaigns.length} results
               </p>
@@ -271,7 +271,7 @@ export default function CampaignsPage() {
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search campaigns..."
+              placeholder="Search Executions..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
@@ -286,7 +286,7 @@ export default function CampaignsPage() {
               <thead className="bg-accent">
                 <tr className="border-b border-border">
                   {[
-                    "Campaign",
+                    "Executions",
                     "Status",
                     "Budget",
                     "Timeline",

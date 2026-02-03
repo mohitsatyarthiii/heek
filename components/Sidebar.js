@@ -43,15 +43,15 @@ export default function Sidebar({ onLogout }) {
     },
     { 
       href: "/dashboard/tasks", 
-      label: "Tasks", 
+      label: "Requirements", 
       icon: CheckSquare,
-      description: "Assign and track tasks"
+      description: "Assign and track requirements"
     },
     { 
       href: "/dashboard/campaigns", 
-      label: "Campaigns", 
+      label: "Executions", 
       icon: BarChart,
-      description: "Brand campaigns"
+      description: "Brand Requirements"
     },
   ];
 
@@ -65,14 +65,14 @@ export default function Sidebar({ onLogout }) {
     },
     {
       href: "/dashboard/tasks/new",
-      label: "Create Task",
+      label: "Create Requirement",
       icon: PlusCircle,
       color: "text-green-600 dark:text-green-400",
       bgColor: "bg-green-100 dark:bg-green-900/30"
     },
     {
       href: "/dashboard/campaigns/new",
-      label: "New Campaign",
+      label: "New Execution",
       icon: TrendingUp,
       color: "text-purple-600 dark:text-purple-400",
       bgColor: "bg-purple-100 dark:bg-purple-900/30"

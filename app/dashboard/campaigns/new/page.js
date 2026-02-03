@@ -154,7 +154,7 @@ export default function NewCampaignPage() {
         .single();
 
       if (!['admin', 'manager'].includes(profile?.role)) {
-        throw new Error("You don't have permission to create campaigns");
+        throw new Error("You don't have permission to create Execution");
       }
 
       // Prepare campaign data
@@ -184,14 +184,14 @@ export default function NewCampaignPage() {
         throw insertError;
       }
 
-      setSuccess("Campaign created successfully!");
+      setSuccess("Execution created successfully!");
       setTimeout(() => {
         router.push("/dashboard/campaigns");
         router.refresh();
       }, 1500);
       
     } catch (err) {
-      setError(err.message || "Failed to create campaign");
+      setError(err.message || "Failed to create Execution");
     } finally {
       setLoading(false);
     }
@@ -261,7 +261,7 @@ export default function NewCampaignPage() {
       }
 
       if (!['admin', 'manager'].includes(profile.role)) {
-        throw new Error(`Only admin and manager can bulk create campaigns. Your role: ${profile.role}`);
+        throw new Error(`Only admin and manager can bulk create Execution. Your role: ${profile.role}`);
       }
 
       const lines = csvData.split('\n');
@@ -351,7 +351,7 @@ export default function NewCampaignPage() {
         throw new Error(`Bulk insert error: ${insertError.message}`);
       }
 
-      setSuccess(`Successfully created ${campaigns.length} campaigns!`);
+      setSuccess(`Successfully created ${campaigns.length} Execution!`);
       setTimeout(() => {
         router.push("/dashboard/campaigns");
         router.refresh();
@@ -403,7 +403,7 @@ export default function NewCampaignPage() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading campaign form...</p>
+          <p className="mt-4 text-muted-foreground">Loading Execution form...</p>
         </div>
       </div>
     );
@@ -425,9 +425,9 @@ export default function NewCampaignPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Create Campaigns</h1>
+              <h1 className="text-2xl font-bold text-foreground">Create Execution</h1>
               <p className="text-sm text-muted-foreground">
-                Create campaigns individually or in bulk via CSV
+                Create Execution individually or in bulk via CSV
               </p>
             </div>
           </div>
@@ -444,7 +444,7 @@ export default function NewCampaignPage() {
               <div className="space-y-2">
                 <h3 className="text-lg font-bold text-foreground">Creation Method</h3>
                 <p className="text-sm text-muted-foreground">
-                  Choose how you want to create campaigns
+                  Choose how you want to create Executions
                 </p>
               </div>
               
@@ -454,7 +454,7 @@ export default function NewCampaignPage() {
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${uploadMode === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
                 >
                   <Plus className="h-4 w-4" />
-                  Single Campaign
+                  Single Execution
                 </button>
                 <div className="w-px bg-border"></div>
                 <button
@@ -478,9 +478,9 @@ export default function NewCampaignPage() {
                   <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-foreground">Create Single Campaign</CardTitle>
+                  <CardTitle className="text-foreground">Create Single Execution</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Create and set up a single campaign manually
+                    Create and set up a single Execution manually
                   </p>
                 </div>
               </div>
@@ -754,7 +754,7 @@ export default function NewCampaignPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="campaign_notes" className="text-foreground">Campaign Notes</Label>
+                  <Label htmlFor="campaign_notes" className="text-foreground">Execution Notes</Label>
                   <Textarea
                     id="campaign_notes"
                     name="campaign_notes"
@@ -790,7 +790,7 @@ export default function NewCampaignPage() {
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        Create Campaign
+                        Create Execution
                       </>
                     )}
                   </Button>
@@ -808,7 +808,7 @@ export default function NewCampaignPage() {
                 <div>
                   <CardTitle className="text-foreground">Bulk CSV Upload</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Upload multiple campaigns via CSV file
+                    Upload multiple Execution via CSV file
                   </p>
                 </div>
               </div>

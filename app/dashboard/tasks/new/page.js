@@ -163,14 +163,14 @@ export default function NewTaskPage() {
         throw insertError;
       }
 
-      setSuccess("Task created successfully!");
+      setSuccess("Requirement created successfully!");
       setTimeout(() => {
         router.push("/dashboard/tasks");
         router.refresh();
       }, 1500);
       
     } catch (err) {
-      setError(err.message || "Failed to create task");
+      setError(err.message || "Failed to create Requirement");
     } finally {
       setLoading(false);
     }
@@ -240,7 +240,7 @@ export default function NewTaskPage() {
       }
 
       if (!['admin', 'manager'].includes(profile.role)) {
-        throw new Error(`Only admin and manager can bulk create tasks. Your role: ${profile.role}`);
+        throw new Error(`Only admin and manager can bulk create Requirements. Your role: ${profile.role}`);
       }
 
       const lines = csvData.split('\n');
@@ -304,7 +304,7 @@ export default function NewTaskPage() {
         throw new Error(`Bulk insert error: ${insertError.message}`);
       }
 
-      setSuccess(`Successfully created ${tasks.length} tasks!`);
+      setSuccess(`Successfully created ${tasks.length} Requirement!`);
       setTimeout(() => {
         router.push("/dashboard/tasks");
         router.refresh();
@@ -357,7 +357,7 @@ export default function NewTaskPage() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading task form...</p>
+          <p className="mt-4 text-muted-foreground">Loading Requirement form...</p>
         </div>
       </div>
     );
@@ -379,9 +379,9 @@ export default function NewTaskPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Create Tasks</h1>
+              <h1 className="text-2xl font-bold text-foreground">Create Requirements</h1>
               <p className="text-sm text-muted-foreground">
-                Create tasks individually or in bulk via CSV
+                Create requirement individually or in bulk via CSV
               </p>
             </div>
           </div>
@@ -398,7 +398,7 @@ export default function NewTaskPage() {
               <div className="space-y-2">
                 <h3 className="text-lg font-bold text-foreground">Creation Method</h3>
                 <p className="text-sm text-muted-foreground">
-                  Choose how you want to create tasks
+                  Choose how you want to create Requirements
                 </p>
               </div>
               
@@ -408,7 +408,7 @@ export default function NewTaskPage() {
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${uploadMode === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
                 >
                   <Plus className="h-4 w-4" />
-                  Single Task
+                  Single Requirement
                 </button>
                 <div className="w-px bg-border"></div>
                 <button
@@ -432,9 +432,9 @@ export default function NewTaskPage() {
                   <Plus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-foreground">Create Single Task</CardTitle>
+                  <CardTitle className="text-foreground">Create Single Requirement</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Create and assign a single task manually
+                    Create and assign a single Requirement manually
                   </p>
                 </div>
               </div>
@@ -457,7 +457,7 @@ export default function NewTaskPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-foreground">Task Title *</Label>
+                  <Label htmlFor="title" className="text-foreground">Requirement Title *</Label>
                   <Input
                     id="title"
                     name="title"
@@ -671,7 +671,7 @@ export default function NewTaskPage() {
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        {users.length === 0 ? "Add Users First" : "Create Task"}
+                        {users.length === 0 ? "Add Users First" : "Create Requirement"}
                       </>
                     )}
                   </Button>
