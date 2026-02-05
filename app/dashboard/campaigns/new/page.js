@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { 
   AlertCircle, 
@@ -37,10 +38,21 @@ import {
   RefreshCw,
   Target,
   Globe,
-  Layers
+  Layers,
+  Video,
+  Package,
+  CreditCard,
+  TrendingUp,
+  Percent,
+  FileBarChart,
+  ClipboardCheck,
+  ShieldCheck,
+  BadgeCheck,
+  Sparkles,
+  Clock,
 } from "lucide-react";
 
-export default function NewCampaignPage() {
+export default function NewExecutionPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme, colors } = useTheme();
@@ -55,21 +67,61 @@ export default function NewCampaignPage() {
   const [csvPreview, setCsvPreview] = useState([]);
   
   const [formData, setFormData] = useState({
+    creator_name: "",
     brand_name: "",
+    deliverables: "",
+    commercials_locked: "",
+    creators_price: "",
+    profit: "",
+    commission: "",
+    person: "",
+    video_status: "draft",
     description: "",
-    budget_min: "",
-    budget_max: "",
     status: "planning",
     start_date: "",
     end_date: "",
     assigned_creator: "none",
     assigned_team_member: "",
-    target_niches: "",
-    target_regions: "",
-    required_platforms: "",
+    required_platforms: [], // Changed to array for multi-select
     status_notes: "",
     campaign_notes: "",
   });
+
+  // Social media platforms for multi-select
+  const socialPlatforms = [
+    { id: "instagram", name: "Instagram", icon: "📸" },
+    { id: "youtube", name: "YouTube", icon: "🎬" },
+    { id: "tiktok", name: "TikTok", icon: "🎵" },
+    { id: "facebook", name: "Facebook", icon: "👥" },
+    { id: "twitter", name: "Twitter/X", icon: "🐦" },
+    { id: "linkedin", name: "LinkedIn", icon: "💼" },
+    { id: "pinterest", name: "Pinterest", icon: "📌" },
+    { id: "snapchat", name: "Snapchat", icon: "👻" },
+    { id: "whatsapp", name: "WhatsApp", icon: "💬" },
+    { id: "telegram", name: "Telegram", icon: "✈️" },
+  ];
+
+  // Video status options
+  const videoStatusOptions = [
+    { value: "draft", label: "Draft", icon: <FileText className="h-4 w-4" /> },
+    { value: "pending", label: "Pending", icon: <Clock className="h-4 w-4" /> },
+    { value: "approved", label: "Approved", icon: <CheckCircle className="h-4 w-4" /> },
+    { value: "live", label: "Live", icon: <Video className="h-4 w-4" /> },
+    { value: "rejected", label: "Rejected", icon: <X className="h-4 w-4" /> },
+  ];
+
+  // Commission options
+  const commissionOptions = [
+    "10%",
+    "15%",
+    "20%",
+    "25%",
+    "30%",
+    "Fixed Amount",
+    "Performance Based",
+    "$150 POC & 4500",
+    "Custom"
+  ];
 
   useEffect(() => {
     fetchData();
@@ -137,6 +189,28 @@ export default function NewCampaignPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handlePlatformChange = (platformId) => {
+    setFormData(prev => {
+      const platforms = [...prev.required_platforms];
+      if (platforms.includes(platformId)) {
+        return { ...prev, required_platforms: platforms.filter(p => p !== platformId) };
+      } else {
+        return { ...prev, required_platforms: [...platforms, platformId] };
+      }
+    });
+  };
+
+  const calculateProfit = () => {
+    const commercials = parseFloat(formData.commercials_locked) || 0;
+    const creatorPrice = parseFloat(formData.creators_price) || 0;
+    const profit = commercials - creatorPrice;
+    
+    // Auto-calculate profit if not manually set
+    if (formData.profit === "" || formData.profit === "0") {
+      setFormData(prev => ({ ...prev, profit: profit.toString() }));
+    }
+  };
+
   const handleSingleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -157,20 +231,32 @@ export default function NewCampaignPage() {
         throw new Error("You don't have permission to create Execution");
       }
 
-      // Prepare campaign data
-      const campaignData = {
+      // Calculate profit if not set
+      let profit = parseFloat(formData.profit) || 0;
+      if (!formData.profit && formData.commercials_locked && formData.creators_price) {
+        const commercials = parseFloat(formData.commercials_locked) || 0;
+        const creatorPrice = parseFloat(formData.creators_price) || 0;
+        profit = commercials - creatorPrice;
+      }
+
+      // Prepare execution data
+      const executionData = {
+        creator_name: formData.creator_name,
         brand_name: formData.brand_name,
+        deliverables: formData.deliverables,
+        commercials_locked: formData.commercials_locked ? parseFloat(formData.commercials_locked) : 0,
+        creators_price: formData.creators_price ? parseFloat(formData.creators_price) : 0,
+        profit: profit,
+        commission: formData.commission,
+        person: formData.person,
+        video_status: formData.video_status,
         description: formData.description,
-        budget_min: formData.budget_min ? parseInt(formData.budget_min) : null,
-        budget_max: formData.budget_max ? parseInt(formData.budget_max) : null,
         status: formData.status,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
         assigned_creator: formData.assigned_creator === "none" ? null : formData.assigned_creator,
         assigned_team_member: formData.assigned_team_member || null,
-        target_niches: formData.target_niches ? formData.target_niches.split(',').map(n => n.trim()).filter(n => n) : [],
-        target_regions: formData.target_regions ? formData.target_regions.split(',').map(r => r.trim()).filter(r => r) : [],
-        required_platforms: formData.required_platforms ? formData.required_platforms.split(',').map(p => p.trim()).filter(p => p) : [],
+        required_platforms: formData.required_platforms,
         status_notes: formData.status_notes,
         campaign_notes: formData.campaign_notes,
         created_by: user.id,
@@ -178,7 +264,7 @@ export default function NewCampaignPage() {
 
       const { error: insertError } = await supabase
         .from('campaigns')
-        .insert([campaignData]);
+        .insert([executionData]);
 
       if (insertError) {
         throw insertError;
@@ -266,15 +352,16 @@ export default function NewCampaignPage() {
 
       const lines = csvData.split('\n');
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const campaigns = [];
+      const executions = [];
 
       for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
         
         const values = lines[i].split(',');
-        const campaign = {
+        const execution = {
           created_by: session.user.id,
           status: "planning",
+          video_status: "draft",
         };
 
         headers.forEach((header, index) => {
@@ -282,76 +369,94 @@ export default function NewCampaignPage() {
           
           // Map CSV headers to database fields
           switch(header) {
+            case 'creator_name':
+              execution.creator_name = value;
+              break;
             case 'brand_name':
             case 'brand':
-              campaign.brand_name = value;
+              execution.brand_name = value;
+              break;
+            case 'deliverables':
+              execution.deliverables = value;
+              break;
+            case 'commercials_locked':
+              execution.commercials_locked = value ? parseFloat(value) : 0;
+              break;
+            case 'creators_price':
+              execution.creators_price = value ? parseFloat(value) : 0;
+              break;
+            case 'profit':
+              execution.profit = value ? parseFloat(value) : 0;
+              break;
+            case 'commission':
+              execution.commission = value;
+              break;
+            case 'person':
+              execution.person = value;
+              break;
+            case 'video_status':
+              execution.video_status = value || "draft";
               break;
             case 'description':
-              campaign.description = value;
-              break;
-            case 'budget_min':
-              campaign.budget_min = value ? parseInt(value) : null;
-              break;
-            case 'budget_max':
-              campaign.budget_max = value ? parseInt(value) : null;
+              execution.description = value;
               break;
             case 'status':
-              campaign.status = value;
+              execution.status = value || "planning";
               break;
             case 'start_date':
-              campaign.start_date = value;
+              execution.start_date = value;
               break;
             case 'end_date':
-              campaign.end_date = value;
+              execution.end_date = value;
               break;
             case 'assigned_team_member':
             case 'assigned_to':
+            case 'person':
               // Find user by email or name
               const user = users.find(u => 
                 u.email === value || u.name === value
               );
-              campaign.assigned_team_member = user?.id || null;
+              execution.assigned_team_member = user?.id || null;
+              execution.person = execution.person || user?.name || value;
               break;
             case 'assigned_creator':
             case 'creator':
               // Find creator by name
               const creator = creators.find(c => c.name === value);
-              campaign.assigned_creator = creator?.id || null;
-              break;
-            case 'target_niches':
-            case 'niches':
-              campaign.target_niches = value ? value.split(',').map(n => n.trim()).filter(n => n) : [];
-              break;
-            case 'target_regions':
-            case 'regions':
-              campaign.target_regions = value ? value.split(',').map(r => r.trim()).filter(r => r) : [];
+              execution.assigned_creator = creator?.id || null;
+              execution.creator_name = execution.creator_name || value;
               break;
             case 'required_platforms':
             case 'platforms':
-              campaign.required_platforms = value ? value.split(',').map(p => p.trim()).filter(p => p) : [];
+              execution.required_platforms = value ? value.split(',').map(p => p.trim()).filter(p => p) : [];
               break;
             case 'status_notes':
-              campaign.status_notes = value;
+              execution.status_notes = value;
               break;
             case 'campaign_notes':
-              campaign.campaign_notes = value;
+              execution.campaign_notes = value;
               break;
           }
         });
 
-        campaigns.push(campaign);
+        // Auto-calculate profit if not provided
+        if (!execution.profit && execution.commercials_locked && execution.creators_price) {
+          execution.profit = execution.commercials_locked - execution.creators_price;
+        }
+
+        executions.push(execution);
       }
 
-      // Insert all campaigns
+      // Insert all executions
       const { error: insertError } = await supabase
         .from('campaigns')
-        .insert(campaigns);
+        .insert(executions);
 
       if (insertError) {
         throw new Error(`Bulk insert error: ${insertError.message}`);
       }
 
-      setSuccess(`Successfully created ${campaigns.length} Execution!`);
+      setSuccess(`Successfully created ${executions.length} Execution(s)!`);
       setTimeout(() => {
         router.push("/dashboard/campaigns");
         router.refresh();
@@ -367,31 +472,35 @@ export default function NewCampaignPage() {
 
   const downloadTemplate = () => {
     const headers = [
-      'Brand Name',
-      'Description',
-      'Budget Min',
-      'Budget Max',
-      'Status',
-      'Start Date',
-      'End Date',
-      'Assigned Team Member',
-      'Assigned Creator',
-      'Target Niches',
-      'Target Regions',
-      'Required Platforms',
-      'Status Notes',
-      'Campaign Notes'
+      'creator_name',
+      'brand_name',
+      'deliverables',
+      'commercials_locked',
+      'creators_price',
+      'profit',
+      'commission',
+      'person',
+      'video_status',
+      'description',
+      'status',
+      'start_date',
+      'end_date',
+      'assigned_team_member',
+      'assigned_creator',
+      'required_platforms',
+      'status_notes',
+      'campaign_notes'
     ];
     
     const template = headers.join(',') + '\n' +
-      'Nike,Campaign for new sneaker launch,50000,200000,planning,2024-02-01,2024-03-01,john@example.com,John Creator,Sports,Fitness,India,US,Instagram,YouTube,Initial planning phase,Focus on Gen Z audience\n' +
-      'Apple,Product launch campaign,100000,500000,planning,2024-02-15,2024-04-15,jane@example.com,,Technology,Gaming,Global,YouTube,TikTok,Planning stage,High budget campaign';
+      'Brief Case,Outskill,Integration,2000,1500,500,$150 POC & 4500,Yugam,live,Integration campaign for Outskill,active,2024-01-01,2024-02-01,yugam@example.com,Brief Case,instagram,youtube,Initial planning phase,Focus on integration\n' +
+      'Tech Guru,Nike,Video Production,5000,3500,1500,20%,John Doe,pending,Video campaign for Nike,planning,2024-02-01,2024-03-01,john@example.com,Tech Guru,instagram,tiktok,Planning stage,High budget campaign';
     
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'campaign_template.csv';
+    a.download = 'execution_template.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -418,16 +527,16 @@ export default function NewCampaignPage() {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => router.back()}
+              onClick={() => router.push("/dashboard/campaigns")}
               className="border-border text-foreground hover:bg-accent"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              Back to Executions
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Create Execution</h1>
+              <h1 className="text-2xl font-bold text-foreground">Create New Execution</h1>
               <p className="text-sm text-muted-foreground">
-                Create Execution individually or in bulk via CSV
+                Add new execution individually or in bulk via CSV
               </p>
             </div>
           </div>
@@ -480,7 +589,7 @@ export default function NewCampaignPage() {
                 <div>
                   <CardTitle className="text-foreground">Create Single Execution</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Create and set up a single Execution manually
+                    Fill in all details for a single execution
                   </p>
                 </div>
               </div>
@@ -503,6 +612,57 @@ export default function NewCampaignPage() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Creator Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="creator_name" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Creator Name *
+                      </span>
+                    </Label>
+                    <Select 
+                      value={formData.creator_name} 
+                      onValueChange={(value) => {
+                        handleSelectChange('creator_name', value);
+                        // If creator is selected from dropdown, also assign to assigned_creator
+                        if (creators.find(c => c.name === value)) {
+                          const creator = creators.find(c => c.name === value);
+                          if (creator) {
+                            handleSelectChange('assigned_creator', creator.id);
+                          }
+                        }
+                      }}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Select or enter creator name" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border max-h-[300px]">
+                        <SelectItem value="_custom_" className="text-muted-foreground">
+  Or type new name...
+</SelectItem>
+                        {creators.map((creator) => (
+                          <SelectItem key={creator.id} value={creator.name} className="text-foreground">
+                            <div className="flex items-center gap-2">
+                              <User className="h-3 w-3" />
+                              {creator.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="creator_name_input"
+                      name="creator_name"
+                      value={formData.creator_name}
+                      onChange={handleChange}
+                      placeholder="Enter creator name if not in list"
+                      disabled={loading}
+                      className="mt-2 bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Brand Name */}
                   <div className="space-y-2">
                     <Label htmlFor="brand_name" className="text-foreground">
                       <span className="flex items-center gap-2">
@@ -522,6 +682,215 @@ export default function NewCampaignPage() {
                     />
                   </div>
 
+                  {/* Deliverables */}
+                  <div className="md:col-span-2 space-y-2">
+                    <Label htmlFor="deliverables" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        Deliverables *
+                      </span>
+                    </Label>
+                    <Textarea
+                      id="deliverables"
+                      name="deliverables"
+                      value={formData.deliverables}
+                      onChange={handleChange}
+                      placeholder="Describe what needs to be delivered (e.g., Integration, Video Production, Content Creation)"
+                      required
+                      rows={2}
+                      disabled={loading}
+                      className="bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Commercials Locked */}
+                  <div className="space-y-2">
+                    <Label htmlFor="commercials_locked" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Commercials Locked ($) *
+                      </span>
+                    </Label>
+                    <Input
+                      id="commercials_locked"
+                      name="commercials_locked"
+                      type="number"
+                      value={formData.commercials_locked}
+                      onChange={(e) => {
+                        handleChange(e);
+                        // Auto-calculate profit when commercials change
+                        setTimeout(calculateProfit, 100);
+                      }}
+                      placeholder="e.g., 2000"
+                      required
+                      disabled={loading}
+                      className="bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Creator's Price */}
+                  <div className="space-y-2">
+                    <Label htmlFor="creators_price" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Creator's Price ($) *
+                      </span>
+                    </Label>
+                    <Input
+                      id="creators_price"
+                      name="creators_price"
+                      type="number"
+                      value={formData.creators_price}
+                      onChange={(e) => {
+                        handleChange(e);
+                        // Auto-calculate profit when price changes
+                        setTimeout(calculateProfit, 100);
+                      }}
+                      placeholder="e.g., 1500"
+                      required
+                      disabled={loading}
+                      className="bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Profit */}
+                  <div className="space-y-2">
+                    <Label htmlFor="profit" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Profit ($)
+                      </span>
+                    </Label>
+                    <Input
+                      id="profit"
+                      name="profit"
+                      type="number"
+                      value={formData.profit}
+                      onChange={handleChange}
+                      placeholder="Auto-calculated or enter manually"
+                      disabled={loading}
+                      className="bg-background border-border text-foreground focus:border-primary"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Auto-calculated: ${(parseFloat(formData.commercials_locked || 0) - parseFloat(formData.creators_price || 0)).toFixed(2)}
+                    </p>
+                  </div>
+
+                  {/* Commission */}
+                  <div className="space-y-2">
+                    <Label htmlFor="commission" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <Percent className="h-4 w-4" />
+                        Commission
+                      </span>
+                    </Label>
+                    <Select 
+                      value={formData.commission} 
+                      onValueChange={(value) => handleSelectChange('commission', value)}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Select commission type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        <SelectItem value="no_commission" className="text-foreground">No commission</SelectItem>
+                        {commissionOptions.map((option, index) => (
+                          <SelectItem key={index} value={option} className="text-foreground">
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="commission_custom"
+                      name="commission"
+                      value={!commissionOptions.includes(formData.commission) ? formData.commission : ""}
+                      onChange={handleChange}
+                      placeholder="Enter custom commission"
+                      disabled={loading}
+                      className="mt-2 bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Person */}
+                  <div className="space-y-2">
+                    <Label htmlFor="person" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Person *
+                      </span>
+                    </Label>
+                    <Select 
+                      value={formData.person} 
+                      onValueChange={(value) => {
+                        handleSelectChange('person', value);
+                        // If person is selected from dropdown, also assign to assigned_team_member
+                        if (users.find(u => u.name === value)) {
+                          const user = users.find(u => u.name === value);
+                          if (user) {
+                            handleSelectChange('assigned_team_member', user.id);
+                          }
+                        }
+                      }}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Select or enter person name" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border max-h-[300px]">
+                        <SelectItem value="_name" className="text-muted-foreground">Or type new name...</SelectItem>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.name || user.email} className="text-foreground">
+                            <div className="flex items-center gap-2">
+                              <User className="h-3 w-3" />
+                              {user.name || user.email}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="person_input"
+                      name="person"
+                      value={formData.person}
+                      onChange={handleChange}
+                      placeholder="Enter person name if not in list"
+                      required
+                      disabled={loading}
+                      className="mt-2 bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Video Status */}
+                  <div className="space-y-2">
+                    <Label htmlFor="video_status" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <Video className="h-4 w-4" />
+                        Video Status *
+                      </span>
+                    </Label>
+                    <Select 
+                      value={formData.video_status} 
+                      onValueChange={(value) => handleSelectChange('video_status', value)}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Select video status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        {videoStatusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value} className="text-foreground">
+                            <div className="flex items-center gap-2">
+                              {option.icon}
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Status */}
                   <div className="space-y-2">
                     <Label htmlFor="status" className="text-foreground">Status</Label>
                     <Select 
@@ -535,51 +904,14 @@ export default function NewCampaignPage() {
                       <SelectContent className="bg-card border-border">
                         <SelectItem value="planning" className="text-foreground">Planning</SelectItem>
                         <SelectItem value="active" className="text-foreground">Active</SelectItem>
-                        <SelectItem value="paused" className="text-foreground">Paused</SelectItem>
                         <SelectItem value="completed" className="text-foreground">Completed</SelectItem>
                         <SelectItem value="cancelled" className="text-foreground">Cancelled</SelectItem>
+                        <SelectItem value="on_hold" className="text-foreground">On Hold</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="budget_min" className="text-foreground">
-                      <span className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        Min Budget (₹)
-                      </span>
-                    </Label>
-                    <Input
-                      id="budget_min"
-                      name="budget_min"
-                      type="number"
-                      value={formData.budget_min}
-                      onChange={handleChange}
-                      placeholder="e.g., 50000"
-                      disabled={loading}
-                      className="bg-background border-border text-foreground focus:border-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="budget_max" className="text-foreground">
-                      <span className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        Max Budget (₹)
-                      </span>
-                    </Label>
-                    <Input
-                      id="budget_max"
-                      name="budget_max"
-                      type="number"
-                      value={formData.budget_max}
-                      onChange={handleChange}
-                      placeholder="e.g., 200000"
-                      disabled={loading}
-                      className="bg-background border-border text-foreground focus:border-primary"
-                    />
-                  </div>
-
+                  {/* Start Date */}
                   <div className="space-y-2">
                     <Label htmlFor="start_date" className="text-foreground">Start Date</Label>
                     <div className="relative">
@@ -596,6 +928,7 @@ export default function NewCampaignPage() {
                     </div>
                   </div>
 
+                  {/* End Date */}
                   <div className="space-y-2">
                     <Label htmlFor="end_date" className="text-foreground">End Date</Label>
                     <div className="relative">
@@ -612,159 +945,74 @@ export default function NewCampaignPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="assigned_team_member" className="text-foreground">
-                      <span className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Assign to Team Member
-                      </span>
-                    </Label>
-                    <Select 
-                      value={formData.assigned_team_member} 
-                      onValueChange={(value) => handleSelectChange('assigned_team_member', value)}
-                      disabled={loading || users.length === 0}
-                    >
-                      <SelectTrigger className="bg-background border-border text-foreground">
-                        <SelectValue placeholder="Select team member" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        <SelectItem value="none" className="text-foreground">None</SelectItem>
-                        {users.map((teamMember) => (
-                          <SelectItem key={teamMember.id} value={teamMember.id} className="text-foreground">
-                            <div className="flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                <User className="h-3 w-3 text-primary" />
-                              </div>
-                              <div>
-                                <span>{teamMember.name || teamMember.email}</span>
-                                <span className="text-xs text-muted-foreground ml-2">({teamMember.role})</span>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  {/* Social Media Platforms - Multi-select */}
+                  <div className="md:col-span-2 space-y-3">
+                    <Label className="text-foreground">Required Platforms (Select multiple)</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                      {socialPlatforms.map((platform) => (
+                        <div key={platform.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`platform-${platform.id}`}
+                            checked={formData.required_platforms.includes(platform.id)}
+                            onCheckedChange={() => handlePlatformChange(platform.id)}
+                            disabled={loading}
+                          />
+                          <Label
+                            htmlFor={`platform-${platform.id}`}
+                            className="text-sm font-normal cursor-pointer flex items-center gap-2"
+                          >
+                            
+                            {platform.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="assigned_creator" className="text-foreground">
-                      <span className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Assign to Creator (Optional)
-                      </span>
-                    </Label>
-                    <Select 
-                      value={formData.assigned_creator} 
-                      onValueChange={(value) => handleSelectChange('assigned_creator', value)}
-                      disabled={loading || creators.length === 0}
-                    >
-                      <SelectTrigger className="bg-background border-border text-foreground">
-                        <SelectValue placeholder="Select creator" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        <SelectItem value="none" className="text-foreground">None</SelectItem>
-                        {creators.map((creator) => (
-                          <SelectItem key={creator.id} value={creator.id} className="text-foreground">
-                            {creator.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="target_niches" className="text-foreground">
-                      <span className="flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
-                        Target Niches
-                      </span>
-                    </Label>
-                    <Input
-                      id="target_niches"
-                      name="target_niches"
-                      value={formData.target_niches}
-                      onChange={handleChange}
-                      placeholder="Fashion, Beauty, Lifestyle (comma separated)"
-                      disabled={loading}
-                      className="bg-background border-border text-foreground focus:border-primary"
-                    />
-                    <p className="text-xs text-muted-foreground">Separate with commas</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="target_regions" className="text-foreground">
-                      <span className="flex items-center gap-2">
-                        <Globe className="h-4 w-4" />
-                        Target Regions
-                      </span>
-                    </Label>
-                    <Input
-                      id="target_regions"
-                      name="target_regions"
-                      value={formData.target_regions}
-                      onChange={handleChange}
-                      placeholder="India, US, UK (comma separated)"
-                      disabled={loading}
-                      className="bg-background border-border text-foreground focus:border-primary"
-                    />
-                    <p className="text-xs text-muted-foreground">Separate with commas</p>
-                  </div>
-
+                  {/* Description */}
                   <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="required_platforms" className="text-foreground">Required Platforms</Label>
-                    <Input
-                      id="required_platforms"
-                      name="required_platforms"
-                      value={formData.required_platforms}
+                    <Label htmlFor="description" className="text-foreground">Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
                       onChange={handleChange}
-                      placeholder="Instagram, YouTube, TikTok (comma separated)"
+                      placeholder="Describe the execution details, goals, and requirements..."
+                      rows={3}
                       disabled={loading}
                       className="bg-background border-border text-foreground focus:border-primary"
                     />
-                    <p className="text-xs text-muted-foreground">Separate with commas</p>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-foreground">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Describe the campaign goals, objectives, and requirements..."
-                    rows={4}
-                    disabled={loading}
-                    className="bg-background border-border text-foreground focus:border-primary"
-                  />
-                </div>
+                  {/* Status Notes */}
+                  <div className="space-y-2">
+                    <Label htmlFor="status_notes" className="text-foreground">Status Notes</Label>
+                    <Textarea
+                      id="status_notes"
+                      name="status_notes"
+                      value={formData.status_notes}
+                      onChange={handleChange}
+                      placeholder="Current status updates, progress..."
+                      rows={3}
+                      disabled={loading}
+                      className="bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status_notes" className="text-foreground">Status Notes</Label>
-                  <Textarea
-                    id="status_notes"
-                    name="status_notes"
-                    value={formData.status_notes}
-                    onChange={handleChange}
-                    placeholder="Current status, progress updates, blockers..."
-                    rows={3}
-                    disabled={loading}
-                    className="bg-background border-border text-foreground focus:border-primary"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="campaign_notes" className="text-foreground">Execution Notes</Label>
-                  <Textarea
-                    id="campaign_notes"
-                    name="campaign_notes"
-                    value={formData.campaign_notes}
-                    onChange={handleChange}
-                    placeholder="Additional notes, requirements, special instructions..."
-                    rows={3}
-                    disabled={loading}
-                    className="bg-background border-border text-foreground focus:border-primary"
-                  />
+                  {/* Execution Notes */}
+                  <div className="space-y-2">
+                    <Label htmlFor="campaign_notes" className="text-foreground">Execution Notes</Label>
+                    <Textarea
+                      id="campaign_notes"
+                      name="campaign_notes"
+                      value={formData.campaign_notes}
+                      onChange={handleChange}
+                      placeholder="Additional notes, special instructions..."
+                      rows={3}
+                      disabled={loading}
+                      className="bg-background border-border text-foreground focus:border-primary"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border">
@@ -808,7 +1056,7 @@ export default function NewCampaignPage() {
                 <div>
                   <CardTitle className="text-foreground">Bulk CSV Upload</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Upload multiple Execution via CSV file
+                    Upload multiple executions via CSV file
                   </p>
                 </div>
               </div>
@@ -919,13 +1167,15 @@ export default function NewCampaignPage() {
                   <CardContent className="p-4">
                     <h4 className="font-medium text-foreground mb-2">CSV Format Instructions:</h4>
                     <ul className="space-y-1 text-sm text-muted-foreground">
-                      <li>• First row should contain column headers</li>
-                      <li>• Required columns: <strong>Brand Name</strong></li>
+                      <li>• First row should contain column headers (see template)</li>
+                      <li>• Required columns: <strong>brand_name, creator_name, deliverables, commercials_locked, creators_price, person</strong></li>
                       <li>• Optional columns: All other fields from single entry form</li>
-                      <li>• Multiple values: Separate with commas (for niches, regions, platforms)</li>
-                      <li>• Status values: planning, active, paused, completed, cancelled</li>
+                      <li>• Multiple platforms: Separate with commas (instagram,youtube,tiktok)</li>
+                      <li>• Status values: planning, active, completed, cancelled, on_hold</li>
+                      <li>• Video status values: draft, pending, approved, live, rejected</li>
                       <li>• Date format: YYYY-MM-DD</li>
-                      <li>• Budget values: Numbers only (no currency symbols)</li>
+                      <li>• Currency values: Numbers only (no currency symbols)</li>
+                      <li>• Profit: Will auto-calculate if not provided</li>
                       <li>• Save file as UTF-8 encoded CSV</li>
                     </ul>
                   </CardContent>
@@ -1012,7 +1262,7 @@ export default function NewCampaignPage() {
                       ) : (
                         <>
                           <Upload className="h-4 w-4 mr-2" />
-                          Upload & Create {csvPreview.length > 0 ? `${csvPreview.length}+ Campaigns` : 'Campaigns'}
+                          Upload & Create {csvPreview.length > 0 ? `${csvPreview.length}+ Executions` : 'Executions'}
                         </>
                       )}
                     </Button>

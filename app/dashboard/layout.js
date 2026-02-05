@@ -10,6 +10,7 @@ import {
   AlertCircle,
   LogOut
 } from "lucide-react";
+import AIChatbot from "@/components/chatbot/ai-chatbot";
 
 export default function DashboardLayout({ children }) {
   const [loading, setLoading] = useState(true);
@@ -128,6 +129,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-background flex">
+      <AIChatbot />
       <Sidebar onLogout={handleLogout} />
       
       {/* Main Content Area */}

@@ -23,7 +23,6 @@ import {
   Save, 
   Calendar, 
   User, 
-  Users, 
   Upload, 
   FileText,
   Plus,
@@ -32,7 +31,16 @@ import {
   X,
   AlertTriangle,
   FileSpreadsheet,
-  RefreshCw
+  RefreshCw,
+  Link as LinkIcon,
+  ExternalLink,
+  File,
+  Globe,
+  Target,
+  ListTodo,
+  BadgeAlert,
+  Clock,
+  CheckCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,7 +53,7 @@ export default function NewTaskPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [users, setUsers] = useState([]);
-  const [creators, setCreators] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [uploadMode, setUploadMode] = useState("single"); // "single" or "bulk"
   const [csvData, setCsvData] = useState("");
   const [csvPreview, setCsvPreview] = useState([]);
@@ -56,8 +64,9 @@ export default function NewTaskPage() {
     status: "todo",
     due_date: "",
     assigned_to: "",
-    creator_id: "none",
+    attachment_link: "",
     priority: "medium",
+    campaign_id: "none",
   });
 
   useEffect(() => {
@@ -67,7 +76,7 @@ export default function NewTaskPage() {
   const fetchData = async () => {
     setFetching(true);
     try {
-      await Promise.all([fetchUsers(), fetchCreators()]);
+      await Promise.all([fetchUsers(), fetchCampaigns()]);
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -94,19 +103,19 @@ export default function NewTaskPage() {
     }
   };
 
-  const fetchCreators = async () => {
+  const fetchCampaigns = async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('creators')
-        .select('id, name')
-        .order('name');
+        .from('campaigns')
+        .select('id, brand_name, creator_name, person, status')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCreators(data || []);
+      setCampaigns(data || []);
     } catch (err) {
-      console.error("Error fetching creators:", err);
-      setCreators([]);
+      console.error("Error fetching executions:", err);
+      setCampaigns([]);
     }
   };
 
@@ -140,7 +149,7 @@ export default function NewTaskPage() {
       }
 
       if (!['admin', 'manager'].includes(profile?.role)) {
-        throw new Error("You don't have permission to create tasks");
+        throw new Error("You don't have permission to create requirements");
       }
 
       // Prepare task data
@@ -151,7 +160,8 @@ export default function NewTaskPage() {
         priority: formData.priority,
         due_date: formData.due_date || null,
         assigned_to: formData.assigned_to || null,
-        creator_id: formData.creator_id === "none" ? null : formData.creator_id,
+        attachment_link: formData.attachment_link || null,
+        campaign_id: formData.campaign_id === "none" ? null : formData.campaign_id,
         created_by: user.id,
       };
 
@@ -170,7 +180,7 @@ export default function NewTaskPage() {
       }, 1500);
       
     } catch (err) {
-      setError(err.message || "Failed to create Requirement");
+      setError(err.message || "Failed to create requirement");
     } finally {
       setLoading(false);
     }
@@ -240,7 +250,7 @@ export default function NewTaskPage() {
       }
 
       if (!['admin', 'manager'].includes(profile.role)) {
-        throw new Error(`Only admin and manager can bulk create Requirements. Your role: ${profile.role}`);
+        throw new Error(`Only admin and manager can bulk create requirements. Your role: ${profile.role}`);
       }
 
       const lines = csvData.split('\n');
@@ -268,10 +278,10 @@ export default function NewTaskPage() {
               task.description = value;
               break;
             case 'status':
-              task.status = value;
+              task.status = value || "todo";
               break;
             case 'priority':
-              task.priority = value;
+              task.priority = value || "medium";
               break;
             case 'due_date':
               task.due_date = value;
@@ -283,11 +293,15 @@ export default function NewTaskPage() {
               );
               task.assigned_to = user?.id || null;
               break;
-            case 'creator_id':
-            case 'creator':
-              // Find creator by name
-              const creator = creators.find(c => c.name === value);
-              task.creator_id = creator?.id || null;
+            case 'attachment_link':
+            case 'link':
+              task.attachment_link = value || null;
+              break;
+            case 'campaign_id':
+            case 'campaign':
+              // Find campaign by brand name
+              const campaign = campaigns.find(c => c.brand_name === value);
+              task.campaign_id = campaign?.id || null;
               break;
           }
         });
@@ -304,7 +318,7 @@ export default function NewTaskPage() {
         throw new Error(`Bulk insert error: ${insertError.message}`);
       }
 
-      setSuccess(`Successfully created ${tasks.length} Requirement!`);
+      setSuccess(`Successfully created ${tasks.length} requirement(s)!`);
       setTimeout(() => {
         router.push("/dashboard/tasks");
         router.refresh();
@@ -326,18 +340,19 @@ export default function NewTaskPage() {
       'Priority',
       'Due Date',
       'Assigned To',
-      'Creator'
+      'Attachment Link',
+      'Campaign'
     ];
     
     const template = headers.join(',') + '\n' +
-      'Update marketing campaign,Update campaign assets,todo,medium,2024-01-15,john@example.com,John Creator\n' +
-      'Review content schedule,Review Q2 content schedule,in_progress,high,2024-01-20,jane@example.com,';
+      'Update marketing assets,Update all marketing campaign assets,todo,medium,2024-01-15,john@example.com,https://drive.google.com/file/d/...,Nike Campaign\n' +
+      'Review content schedule,Review Q2 content schedule,in_progress,high,2024-01-20,jane@example.com,https://example.com/document.pdf,Apple Launch';
     
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'task_template.csv';
+    a.download = 'requirement_template.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -352,12 +367,22 @@ export default function NewTaskPage() {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'planning': return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (fetching) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading Requirement form...</p>
+          <p className="mt-4 text-muted-foreground">Loading requirement form...</p>
         </div>
       </div>
     );
@@ -429,12 +454,12 @@ export default function NewTaskPage() {
             <CardHeader className="border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <Plus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <ListTodo className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <CardTitle className="text-foreground">Create Single Requirement</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Create and assign a single Requirement manually
+                    Create and assign a single requirement manually
                   </p>
                 </div>
               </div>
@@ -457,13 +482,18 @@ export default function NewTaskPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-foreground">Requirement Title *</Label>
+                  <Label htmlFor="title" className="text-foreground">
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Requirement Title *
+                    </span>
+                  </Label>
                   <Input
                     id="title"
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    placeholder="Enter task title"
+                    placeholder="Enter requirement title"
                     required
                     disabled={loading}
                     className="bg-background border-border text-foreground focus:border-primary"
@@ -471,17 +501,44 @@ export default function NewTaskPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-foreground">Description</Label>
+                  <Label htmlFor="description" className="text-foreground">
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Description
+                    </span>
+                  </Label>
                   <Textarea
                     id="description"
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Describe the task in detail..."
+                    placeholder="Describe the requirement in detail..."
                     rows={4}
                     disabled={loading}
                     className="bg-background border-border text-foreground focus:border-primary"
                   />
+                </div>
+
+                {/* Attachment Link */}
+                <div className="space-y-2">
+                  <Label htmlFor="attachment_link" className="text-foreground">
+                    <span className="flex items-center gap-2">
+                      <LinkIcon className="h-4 w-4" />
+                      Attachment Link (Optional)
+                    </span>
+                  </Label>
+                  <Input
+                    id="attachment_link"
+                    name="attachment_link"
+                    value={formData.attachment_link}
+                    onChange={handleChange}
+                    placeholder="https://drive.google.com/... or https://example.com/file.pdf"
+                    disabled={loading}
+                    className="bg-background border-border text-foreground focus:border-primary"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Add any link: Google Drive, Dropbox, website URL, document link, etc.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -496,11 +553,22 @@ export default function NewTaskPage() {
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent className="bg-card border-border">
-                        <SelectItem value="todo" className="text-foreground">To Do</SelectItem>
-                        <SelectItem value="in_progress" className="text-foreground">In Progress</SelectItem>
-                        <SelectItem value="review" className="text-foreground">Review</SelectItem>
-                        <SelectItem value="blocked" className="text-foreground">Blocked</SelectItem>
-                        <SelectItem value="done" className="text-foreground">Done</SelectItem>
+                        <SelectItem value="todo" className="text-foreground flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          To Do
+                        </SelectItem>
+                        <SelectItem value="in_progress" className="text-foreground flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          In Progress
+                        </SelectItem>
+                        <SelectItem value="blocked" className="text-foreground flex items-center gap-2">
+                          <BadgeAlert className="h-4 w-4" />
+                          Blocked
+                        </SelectItem>
+                        <SelectItem value="done" className="text-foreground flex items-center gap-2">
+                          <CheckCheck className="h-4 w-4" />
+                          Done
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -542,6 +610,41 @@ export default function NewTaskPage() {
                         disabled={loading}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="campaign_id" className="text-foreground">
+                      <span className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Link to Execution (Optional)
+                      </span>
+                    </Label>
+                    <Select 
+                      value={formData.campaign_id} 
+                      onValueChange={(value) => handleSelectChange('campaign_id', value)}
+                      disabled={loading || campaigns.length === 0}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder={
+                          campaigns.length === 0 
+                            ? "No executions found" 
+                            : "Select execution"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border max-h-[300px]">
+                        <SelectItem value="none" className="text-foreground">None</SelectItem>
+                        {campaigns.map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.id} className="text-foreground">
+                            <div className="flex items-center justify-between w-full">
+                              <span className="truncate">{campaign.brand_name}</span>
+                              <Badge className={`ml-2 text-xs ${getStatusColor(campaign.status)}`}>
+                                {campaign.status}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
@@ -616,36 +719,6 @@ export default function NewTaskPage() {
                       </div>
                     )}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="creator_id" className="text-foreground">
-                      <span className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Link to Creator (Optional)
-                      </span>
-                    </Label>
-                    <Select 
-                      value={formData.creator_id} 
-                      onValueChange={(value) => handleSelectChange('creator_id', value)}
-                      disabled={loading || creators.length === 0}
-                    >
-                      <SelectTrigger className="bg-background border-border text-foreground">
-                        <SelectValue placeholder={
-                          creators.length === 0 
-                            ? "No creators found" 
-                            : "Select creator"
-                        } />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border max-h-[300px]">
-                        <SelectItem value="none" className="text-foreground">None</SelectItem>
-                        {creators.map((creator) => (
-                          <SelectItem key={creator.id} value={creator.id} className="text-foreground">
-                            {creator.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border">
@@ -689,7 +762,7 @@ export default function NewTaskPage() {
                 <div>
                   <CardTitle className="text-foreground">Bulk CSV Upload</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Upload multiple tasks via CSV file
+                    Upload multiple requirements via CSV file
                   </p>
                 </div>
               </div>
@@ -800,12 +873,14 @@ export default function NewTaskPage() {
                   <CardContent className="p-4">
                     <h4 className="font-medium text-foreground mb-2">CSV Format Instructions:</h4>
                     <ul className="space-y-1 text-sm text-muted-foreground">
-                      <li>• First row should contain column headers</li>
+                      <li>• First row should contain column headers (see template)</li>
                       <li>• Required columns: <strong>Title</strong>, <strong>Assigned To</strong> (email or name)</li>
-                      <li>• Optional columns: Description, Status, Priority, Due Date, Creator</li>
-                      <li>• Status values: todo, in_progress, review, blocked, done</li>
+                      <li>• Optional columns: Description, Status, Priority, Due Date, Attachment Link, Campaign</li>
+                      <li>• Status values: todo, in_progress, blocked, done</li>
                       <li>• Priority values: high, medium, low</li>
                       <li>• Date format: YYYY-MM-DD</li>
+                      <li>• Link format: Any valid URL</li>
+                      <li>• Campaign: Use execution brand name</li>
                       <li>• Save file as UTF-8 encoded CSV</li>
                     </ul>
                   </CardContent>
@@ -828,11 +903,11 @@ export default function NewTaskPage() {
                   <Card className="bg-card border-border">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <h4 className="font-medium text-foreground">Available Creators</h4>
+                        <Target className="h-4 w-4 text-muted-foreground" />
+                        <h4 className="font-medium text-foreground">Available Executions</h4>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Found {creators.length} creator{creators.length !== 1 ? 's' : ''}
+                        Found {campaigns.length} execution{campaigns.length !== 1 ? 's' : ''}
                       </p>
                     </CardContent>
                   </Card>
@@ -880,7 +955,7 @@ export default function NewTaskPage() {
                       ) : (
                         <>
                           <Upload className="h-4 w-4 mr-2" />
-                          Upload & Create {csvPreview.length > 0 ? `${csvPreview.length}+ Tasks` : 'Tasks'}
+                          Upload & Create {csvPreview.length > 0 ? `${csvPreview.length}+ Requirements` : 'Requirements'}
                         </>
                       )}
                     </Button>

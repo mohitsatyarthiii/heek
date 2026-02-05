@@ -27,6 +27,9 @@ import {
   Flag,
   CheckCheck,
   AlertTriangle,
+  Link as LinkIcon,
+  ExternalLink,
+  File,
 } from "lucide-react";
 
 /* =========================
@@ -37,7 +40,6 @@ const StatusDot = ({ status }) => {
   const map = {
     todo: "bg-gray-400",
     in_progress: "bg-blue-500",
-    review: "bg-purple-500",
     blocked: "bg-red-500",
     done: "bg-green-500",
   };
@@ -66,6 +68,59 @@ const PriorityTag = ({ priority }) => {
     >
       {priority || "medium"}
     </span>
+  );
+};
+
+/* =========================
+   LINK DISPLAY COMPONENT
+========================= */
+
+const LinkDisplay = ({ link }) => {
+  if (!link) return <span className="text-muted-foreground">—</span>;
+
+  // Extract domain for display
+  const getDomain = (url) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname.replace('www.', '');
+    } catch {
+      // If it's not a valid URL, return truncated text
+      if (link.length > 30) {
+        return `${link.substring(0, 30)}...`;
+      }
+      return link;
+    }
+  };
+
+  // Check if it's a file/attachment link
+  const isFileLink = link.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|rar)$/i);
+  const isImageLink = link.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i);
+  const isVideoLink = link.match(/\.(mp4|mov|avi|mkv|webm)$/i);
+  const isDriveLink = link.includes('drive.google.com');
+  const isDropboxLink = link.includes('dropbox.com');
+
+  const getIcon = () => {
+    if (isFileLink) return <File className="h-3 w-3" />;
+    if (isImageLink) return <File className="h-3 w-3" />;
+    if (isVideoLink) return <PlayCircle className="h-3 w-3" />;
+    if (isDriveLink) return <ExternalLink className="h-3 w-3" />;
+    if (isDropboxLink) return <ExternalLink className="h-3 w-3" />;
+    return <LinkIcon className="h-3 w-3" />;
+  };
+
+  return (
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {getIcon()}
+      <span className="truncate max-w-[120px] text-xs">
+        {getDomain(link)}
+      </span>
+    </a>
   );
 };
 
@@ -148,25 +203,19 @@ export default function TasksPage() {
       return;
     }
 
+    // Enrich tasks with assigned user data (no creator needed now)
     const enriched = await Promise.all(
       tasksData.map(async (t) => {
-        const [{ data: assigned }, { data: creator }] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id,name,email")
-            .eq("id", t.assigned_to)
-            .single(),
-          supabase
-            .from("creators")
-            .select("id,name")
-            .eq("id", t.creator_id)
-            .single(),
-        ]);
+        const { data: assigned } = await supabase
+          .from("profiles")
+          .select("id,name,email")
+          .eq("id", t.assigned_to)
+          .single();
 
         return {
           ...t,
           assigned_user: assigned || null,
-          creator: creator || null,
+          // No creator field needed
         };
       })
     );
@@ -174,14 +223,15 @@ export default function TasksPage() {
     setTasks(enriched);
   };
 
-  /* -------- FILTERING (same logic) -------- */
+  /* -------- FILTERING -------- */
   const filteredTasks = tasks.filter((t) => {
     const q = search.toLowerCase();
 
     const matchesSearch =
       t.title?.toLowerCase().includes(q) ||
       t.description?.toLowerCase().includes(q) ||
-      t.assigned_user?.name?.toLowerCase().includes(q);
+      t.assigned_user?.name?.toLowerCase().includes(q) ||
+      t.attachment_link?.toLowerCase().includes(q);
 
     const matchesStatus =
       statusFilter === "all" || t.status === statusFilter;
@@ -212,14 +262,14 @@ export default function TasksPage() {
 
   const handleExport = () => {
     const csv =
-      "Title,Status,Priority,Due Date,Assignee,Creator\n" +
+      "Title,Status,Priority,Due Date,Assignee,Attachment Link\n" +
       tasks
         .map(
           (t) =>
             `"${t.title}","${t.status}","${t.priority || "medium"}","${
               t.due_date || ""
             }","${t.assigned_user?.name || ""}","${
-              t.creator?.name || ""
+              t.attachment_link || ""
             }"`
         )
         .join("\n");
@@ -289,6 +339,45 @@ export default function TasksPage() {
           </div>
         </div>
 
+        {/* ===== FILTERS ===== */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="text-xs border border-border rounded px-2 py-1 bg-background"
+          >
+            <option value="all">All Status</option>
+            <option value="todo">To Do</option>
+            <option value="in_progress">In Progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="done">Done</option>
+          </select>
+
+          <select 
+            value={assigneeFilter}
+            onChange={(e) => setAssigneeFilter(e.target.value)}
+            className="text-xs border border-border rounded px-2 py-1 bg-background"
+          >
+            <option value="all">All Assignees</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name || u.email}
+              </option>
+            ))}
+          </select>
+
+          <select 
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="text-xs border border-border rounded px-2 py-1 bg-background"
+          >
+            <option value="all">All Priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
         {/* ===== NOTION STYLE SPREADSHEET TABLE ===== */}
         <div className="bg-card border border-border rounded-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -301,7 +390,7 @@ export default function TasksPage() {
                     "Priority",
                     "Due Date",
                     "Assignee",
-                    "Creator",
+                    "Attachment Link",
                     "Actions",
                   ].map((h) => (
                     <th
@@ -353,16 +442,27 @@ export default function TasksPage() {
 
                     {/* DUE DATE */}
                     <td className="p-2 border-r border-border">
-                      {t.due_date
-                        ? new Date(t.due_date).toLocaleDateString()
-                        : "—"}
+                      {t.due_date ? (
+                        <div className={`flex items-center gap-1 ${isOverdue(t) ? 'text-red-600' : ''}`}>
+                          <Calendar className="h-3 w-3" />
+                          {new Date(t.due_date).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short'
+                          })}
+                          {isOverdue(t) && (
+                            <AlertTriangle className="h-3 w-3 text-red-500" />
+                          )}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                     </td>
 
                     {/* ASSIGNEE */}
                     <td className="p-2 border-r border-border">
                       <div className="flex items-center gap-2">
                         <User className="h-3 w-3 text-muted-foreground" />
-                        <span>
+                        <span className="truncate max-w-[100px]">
                           {t.assigned_user?.name ||
                             t.assigned_user?.email ||
                             "Unassigned"}
@@ -370,36 +470,60 @@ export default function TasksPage() {
                       </div>
                     </td>
 
-                    {/* CREATOR */}
+                    {/* ATTACHMENT LINK */}
                     <td className="p-2 border-r border-border">
-                      {t.creator?.name || "—"}
+                      <LinkDisplay link={t.attachment_link} />
                     </td>
 
                     {/* ACTIONS */}
-                    <td className="p-2 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          router.push(`/dashboard/tasks/${t.id}`)
-                        }
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-
-                      {canCreate && (
+                    <td className="p-2">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            router.push(
-                              `/dashboard/tasks/edit/${t.id}`
-                            )
+                            router.push(`/dashboard/tasks/${t.id}`)
                           }
+                          className="h-6 w-6 p-0"
                         >
-                          <Edit className="h-3 w-3" />
+                          <Eye className="h-3 w-3" />
                         </Button>
-                      )}
+
+                        {canCreate && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/tasks/edit/${t.id}`
+                                )
+                              }
+                              className="h-6 w-6 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm("Are you sure you want to delete this requirement?")) {
+                                  const supabase = createClient();
+                                  await supabase
+                                    .from("tasks")
+                                    .delete()
+                                    .eq("id", t.id);
+                                  fetchData();
+                                }
+                              }}
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -410,13 +534,13 @@ export default function TasksPage() {
 
         {/* ===== PAGINATION ===== */}
         <div className="flex justify-between items-center mt-2 text-xs">
-          <p>
+          <p className="text-muted-foreground">
             {startIndex + 1} -{" "}
             {Math.min(
               startIndex + itemsPerPage,
               filteredTasks.length
             )}{" "}
-            of {filteredTasks.length}
+            of {filteredTasks.length} requirements
           </p>
 
           <div className="flex items-center gap-1">
@@ -427,11 +551,12 @@ export default function TasksPage() {
                 setCurrentPage((p) => Math.max(p - 1, 1))
               }
               disabled={currentPage === 1}
+              className="h-7 w-7 p-0"
             >
               <ChevronLeft className="h-3 w-3" />
             </Button>
 
-            <span className="px-2">{currentPage}</span>
+            <span className="px-2 min-w-[2rem] text-center">{currentPage}</span>
 
             <Button
               size="sm"
@@ -442,11 +567,32 @@ export default function TasksPage() {
                 )
               }
               disabled={currentPage === totalPages}
+              className="h-7 w-7 p-0"
             >
               <ChevronRight className="h-3 w-3" />
             </Button>
           </div>
         </div>
+
+        {/* ===== EMPTY STATE ===== */}
+        {filteredTasks.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-sm">
+            <CheckCheck className="h-12 w-12 text-muted-foreground mb-3" />
+            <h3 className="text-sm font-medium mb-1">No requirements found</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              {search ? "Try a different search term" : "Get started by creating a new requirement"}
+            </p>
+            {canCreate && (
+              <Button
+                size="sm"
+                onClick={() => router.push("/dashboard/tasks/new")}
+              >
+                <PlusCircle className="h-3 w-3 mr-1" />
+                New Requirement
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

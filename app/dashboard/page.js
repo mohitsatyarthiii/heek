@@ -206,7 +206,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             {
-              label: "Total Tasks",
+              label: "Total Requirements",
               value: stats.totalTasks,
               icon: <CheckSquare className="h-4 w-4 text-blue-500" />,
               bg: "bg-blue-50",
@@ -224,7 +224,7 @@ export default function DashboardPage() {
               bg: "bg-yellow-50",
             },
             {
-              label: "Active Campaigns",
+              label: "Active Executions",
               value: stats.activeCampaigns,
               icon: <Target className="h-4 w-4 text-green-500" />,
               bg: "bg-green-50",
@@ -250,7 +250,7 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center p-3 border-b bg-accent/30">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-semibold">ASSIGNED TASKS</span>
+                <span className="text-sm font-semibold">ASSIGNED REQUIREMENTS</span>
               </div>
               <Button
                 variant="ghost"
@@ -265,7 +265,7 @@ export default function DashboardPage() {
               <table className="w-full text-xs border-collapse">
                 <thead className="bg-accent/20">
                   <tr className="border-b">
-                    <th className="p-2 text-left">Task</th>
+                    <th className="p-2 text-left">Requirements</th>
                     <th className="p-2 text-left">Status</th>
                     <th className="p-2 text-left">Priority</th>
                     <th className="p-2 text-left">Due</th>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                   {assignedRequirements.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        No tasks assigned
+                        No requirements assigned
                       </td>
                     </tr>
                   ) : (
@@ -338,7 +338,7 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center p-3 border-b bg-accent/30">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-semibold">ASSIGNED CAMPAIGNS</span>
+                <span className="text-sm font-semibold">ASSIGNED EXECUTIONS</span>
               </div>
               <Button
                 variant="ghost"
@@ -353,7 +353,7 @@ export default function DashboardPage() {
               <table className="w-full text-xs border-collapse">
                 <thead className="bg-accent/20">
                   <tr className="border-b">
-                    <th className="p-2 text-left">Campaign</th>
+                    <th className="p-2 text-left">Execution</th>
                     <th className="p-2 text-left">Status</th>
                     <th className="p-2 text-left">Budget</th>
                     <th className="p-2 text-left">Start</th>
@@ -363,7 +363,7 @@ export default function DashboardPage() {
                   {assignedCampaigns.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        No campaigns assigned
+                        No executions assigned
                       </td>
                     </tr>
                   ) : (
@@ -440,14 +440,14 @@ export default function DashboardPage() {
                 variant="outline"
                 onClick={() => router.push("/dashboard/tasks")}
               >
-                <CheckSquare className="h-3 w-3 mr-1" /> Tasks
+                <CheckSquare className="h-3 w-3 mr-1" /> Requirements
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => router.push("/dashboard/campaigns")}
               >
-                <Target className="h-3 w-3 mr-1" /> Campaigns
+                <Target className="h-3 w-3 mr-1" /> Executions
               </Button>
             </div>
           </CardContent>

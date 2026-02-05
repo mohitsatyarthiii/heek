@@ -18,7 +18,8 @@ import {
   FileText,
   UserPlus,
   PlusCircle,
-  TrendingUp
+  TrendingUp,
+  CreditCard
 } from "lucide-react";
 import { useState } from "react";
 
@@ -31,7 +32,7 @@ export default function Sidebar({ onLogout }) {
   const navItems = [
     { 
       href: "/dashboard", 
-      label: "Dashboard", 
+      label: "Creators Database", 
       icon: LayoutDashboard,
       description: "Overview and assignments"
     },
@@ -53,6 +54,13 @@ export default function Sidebar({ onLogout }) {
       icon: BarChart,
       description: "Brand Requirements"
     },
+    {
+  icon: CreditCard,
+  label: "Payments",
+  href: "/dashboard/payments",
+  roles: ["admin", "manager", "associate"],
+  description: "View all Payments"
+}
   ];
 
   const quickActions = [
