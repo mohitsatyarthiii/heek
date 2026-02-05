@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/theme-context";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { 
   LayoutDashboard, 
   Users, 
@@ -13,9 +14,6 @@ import {
   Menu,
   X,
   ChevronRight,
-  Home,
-  Target,
-  FileText,
   UserPlus,
   PlusCircle,
   TrendingUp,
@@ -55,12 +53,12 @@ export default function Sidebar({ onLogout }) {
       description: "Brand Requirements"
     },
     {
-  icon: CreditCard,
-  label: "Payments",
-  href: "/dashboard/payments",
-  roles: ["admin", "manager", "associate"],
-  description: "View all Payments"
-}
+      icon: CreditCard,
+      label: "Payments",
+      href: "/dashboard/payments",
+      roles: ["admin", "manager", "associate"],
+      description: "View all Payments"
+    }
   ];
 
   const quickActions = [
@@ -103,20 +101,20 @@ export default function Sidebar({ onLogout }) {
     <div className={`h-screen flex flex-col transition-all duration-300 ${
       isCollapsed ? 'w-20' : 'w-64'
     }`}>
-      {/* Logo/Header */}
+      {/* Logo/Header - Sirf Logo */}
       <div className={`p-4 border-b border-border ${isCollapsed ? 'px-2' : 'px-4'}`}>
         <div className={`flex items-center justify-between ${isCollapsed ? 'justify-center' : ''}`}>
-          {!isCollapsed && (
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Heek-E OS</h1>
-              <p className="text-xs text-muted-foreground">Creator Management</p>
-            </div>
-          )}
-          {isCollapsed && (
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Home className="h-5 w-5 text-primary" />
-            </div>
-          )}
+          <div className={`relative ${isCollapsed ? 'h-12 w-20' : 'h-20 w-full max-w-[300px]'}`}>
+            <Image
+              src="/logo.png" // ya logo.svg, logo.jpg, etc.
+              alt="Heek-E OS Logo"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 160px, 224px"
+            />
+          </div>
+          
           <Button
             variant="ghost"
             size="icon"
@@ -127,8 +125,6 @@ export default function Sidebar({ onLogout }) {
           </Button>
         </div>
       </div>
-
-    
 
       {/* Main Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -187,7 +183,19 @@ export default function Sidebar({ onLogout }) {
 
       {/* Bottom Section */}
       <div className={`p-4 border-t border-border ${isCollapsed ? 'px-2' : 'px-4'}`}>
-        
+        {/* Settings */}
+        <Link href="/dashboard/settings">
+          <Button
+            variant="ghost"
+            className={`w-full justify-start mb-3 text-foreground hover:bg-accent ${
+              isCollapsed ? 'px-2' : 'px-3'
+            }`}
+            title={isCollapsed ? "Settings" : ""}
+          >
+            <Settings className={`h-4 w-4 ${isCollapsed ? 'mr-0' : 'mr-3'}`} />
+            {!isCollapsed && "Settings"}
+          </Button>
+        </Link>
 
         {/* Logout */}
         <Button
