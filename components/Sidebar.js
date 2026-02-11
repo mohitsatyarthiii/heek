@@ -184,18 +184,7 @@ export default function Sidebar({ onLogout }) {
       {/* Bottom Section */}
       <div className={`p-4 border-t border-border ${isCollapsed ? 'px-2' : 'px-4'}`}>
         {/* Settings */}
-        <Link href="/dashboard/settings">
-          <Button
-            variant="ghost"
-            className={`w-full justify-start mb-3 text-foreground hover:bg-accent ${
-              isCollapsed ? 'px-2' : 'px-3'
-            }`}
-            title={isCollapsed ? "Settings" : ""}
-          >
-            <Settings className={`h-4 w-4 ${isCollapsed ? 'mr-0' : 'mr-3'}`} />
-            {!isCollapsed && "Settings"}
-          </Button>
-        </Link>
+       
 
         {/* Logout */}
         <Button
