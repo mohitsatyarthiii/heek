@@ -28,32 +28,38 @@ import {
   FileText,
   CheckCircle,
   Loader2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 export default function NewPaymentPage() {
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
+
   const [campaigns, setCampaigns] = useState([]);
   const [creators, setCreators] = useState([]);
   const [users, setUsers] = useState([]);
-  
+
+  // Multiple creators ke liye state
+  const [selectedCreators, setSelectedCreators] = useState([
+    { creator_id: "none", amount: "", commission_percentage: "" },
+  ]);
+
   const [formData, setFormData] = useState({
     payment_title: "",
     payment_description: "",
-    payment_amount: "",
+    total_amount: "",
     currency: "USD",
     payment_method: "bank_transfer",
     payment_reference: "",
     payment_date: "",
     due_date: "",
     campaign_id: "none",
-    creator_id: "none",
     paid_by: "",
     status: "draft",
     notes: "",
@@ -67,11 +73,7 @@ export default function NewPaymentPage() {
   const fetchData = async () => {
     setFetching(true);
     try {
-      await Promise.all([
-        fetchCampaigns(),
-        fetchCreators(),
-        fetchUsers(),
-      ]);
+      await Promise.all([fetchCampaigns(), fetchCreators(), fetchUsers()]);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load data");
@@ -85,7 +87,9 @@ export default function NewPaymentPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("campaigns")
-        .select("id, brand_name, creator_name, person, commercials_locked, creators_price")
+        .select(
+          "id, brand_name, creator_name, person, commercials_locked, creators_price",
+        )
         .order("brand_name");
 
       if (!error && data) {
@@ -133,34 +137,111 @@ export default function NewPaymentPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Creator selection handlers
+  const handleCreatorChange = (index, field, value) => {
+    const updatedCreators = [...selectedCreators];
+    updatedCreators[index][field] = value;
+
+    // Agar creator select kiya hai to uska default commission set karo
+    if (field === "creator_id" && value !== "none") {
+      const creator = creators.find((c) => c.id === value);
+      // Yahan aap apne logic ke hisaab se commission percentage set kar sakte ho
+      // Example: based on creator category, past performance, etc.
+      if (creator) {
+        // Default commission - 10% for now, aap apne rules laga sakte ho
+        updatedCreators[index].commission_percentage = "10";
+      }
+    }
+
+    setSelectedCreators(updatedCreators);
+
+    // Total amount recalculate karo
+    calculateTotalAmount(updatedCreators);
+  };
+
+  const addCreator = () => {
+    setSelectedCreators([
+      ...selectedCreators,
+      { creator_id: "none", amount: "", commission_percentage: "" },
+    ]);
+  };
+
+  const removeCreator = (index) => {
+    if (selectedCreators.length > 1) {
+      const updatedCreators = selectedCreators.filter((_, i) => i !== index);
+      setSelectedCreators(updatedCreators);
+      calculateTotalAmount(updatedCreators);
+    }
+  };
+
+  const calculateTotalAmount = (creatorsList) => {
+    const total = creatorsList.reduce((sum, creator) => {
+      return sum + (parseFloat(creator.amount) || 0);
+    }, 0);
+
+    setFormData((prev) => ({
+      ...prev,
+      total_amount: total.toString(),
+    }));
   };
 
   const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Auto-fill creator when campaign is selected
-    if (name === 'campaign_id' && value !== 'none') {
-      const campaign = campaigns.find(c => c.id === value);
-      if (campaign && campaign.creator_name) {
-        const creator = creators.find(c => c.name === campaign.creator_name);
-        if (creator) {
-          setFormData(prev => ({ ...prev, creator_id: creator.id }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Auto-fill creators when campaign is selected
+    if (name === "campaign_id" && value !== "none") {
+      const campaign = campaigns.find((c) => c.id === value);
+      if (campaign) {
+        // Campaign se associated creators fetch karo
+        fetchCampaignCreators(value);
+
+        // Auto-suggest amount from campaign's creator price
+        if (campaign.creators_price) {
+          // Agar ek hi creator hai to uska amount set karo
+          if (selectedCreators.length === 1) {
+            const updatedCreators = [...selectedCreators];
+            updatedCreators[0].amount = campaign.creators_price.toString();
+            setSelectedCreators(updatedCreators);
+            calculateTotalAmount(updatedCreators);
+          }
         }
       }
-      
-      // Auto-suggest amount from campaign's creator price
-      if (campaign && campaign.creators_price) {
-        setFormData(prev => ({ ...prev, payment_amount: campaign.creators_price.toString() }));
+    }
+  };
+
+  const fetchCampaignCreators = async (campaignId) => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("campaign_creators") // Assume aapke paas ye table hai
+        .select("creator_id, commission_percentage, amount")
+        .eq("campaign_id", campaignId);
+
+      if (!error && data && data.length > 0) {
+        // Campaign ke multiple creators set karo
+        const campaignCreators = data.map((c) => ({
+          creator_id: c.creator_id,
+          amount: c.amount?.toString() || "",
+          commission_percentage: c.commission_percentage?.toString() || "10",
+        }));
+        setSelectedCreators(campaignCreators);
+        calculateTotalAmount(campaignCreators);
       }
+    } catch (error) {
+      console.error("Error fetching campaign creators:", error);
     }
   };
 
   const generateInvoiceNumber = () => {
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0");
     return `INV-${year}${month}-${random}`;
   };
 
@@ -172,7 +253,7 @@ export default function NewPaymentPage() {
 
     try {
       const supabase = createClient();
-      
+
       // Check if user has permission
       const { data: profile } = await supabase
         .from("profiles")
@@ -180,7 +261,7 @@ export default function NewPaymentPage() {
         .eq("id", user.id)
         .single();
 
-      if (!['admin', 'manager', 'associate'].includes(profile?.role)) {
+      if (!["admin", "manager", "associate"].includes(profile?.role)) {
         throw new Error("You don't have permission to create payments");
       }
 
@@ -190,18 +271,18 @@ export default function NewPaymentPage() {
         invoiceNumber = generateInvoiceNumber();
       }
 
-      // Prepare payment data
+      // Pehle main payment record create karo
       const paymentData = {
         payment_title: formData.payment_title,
         payment_description: formData.payment_description,
-        payment_amount: parseFloat(formData.payment_amount) || 0,
+        payment_amount: parseFloat(formData.total_amount) || 0,
         currency: formData.currency,
         payment_method: formData.payment_method,
         payment_reference: formData.payment_reference || null,
         payment_date: formData.payment_date || null,
         due_date: formData.due_date || null,
-        campaign_id: formData.campaign_id === "none" ? null : formData.campaign_id,
-        creator_id: formData.creator_id === "none" ? null : formData.creator_id,
+        campaign_id:
+          formData.campaign_id === "none" ? null : formData.campaign_id,
         paid_by: formData.paid_by || null,
         status: formData.status,
         notes: formData.notes || null,
@@ -209,12 +290,43 @@ export default function NewPaymentPage() {
         created_by: user.id,
       };
 
-      const { error: insertError } = await supabase
+      const { data: payment, error: insertError } = await supabase
         .from("payments")
-        .insert([paymentData]);
+        .insert([paymentData])
+        .select()
+        .single();
 
       if (insertError) {
         throw insertError;
+      }
+
+      // Ab multiple creators ke payments create karo
+      if (payment && selectedCreators.length > 0) {
+        const creatorPayments = selectedCreators
+          .filter(
+            (c) =>
+              c.creator_id !== "none" && c.amount && parseFloat(c.amount) > 0,
+          )
+          .map((creator) => ({
+            payment_id: payment.id,
+            creator_id: creator.creator_id,
+            amount: parseFloat(creator.amount),
+            commission_percentage: creator.commission_percentage
+              ? parseFloat(creator.commission_percentage)
+              : null,
+            status: formData.status,
+            created_by: user.id,
+          }));
+
+        if (creatorPayments.length > 0) {
+          const { error: creatorPaymentError } = await supabase
+            .from("payment_creators") // Is table mein multiple creators store honge
+            .insert(creatorPayments);
+
+          if (creatorPaymentError) {
+            throw creatorPaymentError;
+          }
+        }
       }
 
       setSuccess("Payment created successfully!");
@@ -222,7 +334,6 @@ export default function NewPaymentPage() {
         router.push("/dashboard/payments");
         router.refresh();
       }, 1500);
-      
     } catch (err) {
       setError(err.message || "Failed to create payment");
     } finally {
@@ -247,9 +358,9 @@ export default function NewPaymentPage() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 p-4 bg-card border border-border rounded-lg">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => router.push("/dashboard/payments")}
               className="border-border text-foreground hover:bg-accent"
             >
@@ -257,9 +368,11 @@ export default function NewPaymentPage() {
               Back to Payments
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Create New Payment</h1>
+              <h1 className="text-2xl font-bold text-foreground">
+                Create New Payment
+              </h1>
               <p className="text-sm text-muted-foreground">
-                Add a new payment record
+                Add a new payment record with multiple creators
               </p>
             </div>
           </div>
@@ -272,14 +385,16 @@ export default function NewPaymentPage() {
                 <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <CardTitle className="text-foreground">Payment Details</CardTitle>
+                <CardTitle className="text-foreground">
+                  Payment Details
+                </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Fill in the payment information below
                 </p>
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
@@ -310,7 +425,7 @@ export default function NewPaymentPage() {
                     name="payment_title"
                     value={formData.payment_title}
                     onChange={handleChange}
-                    placeholder="e.g., Creator Fee for Nike Campaign"
+                    placeholder="e.g., Creator Fees for Nike Campaign"
                     required
                     disabled={loading}
                     className="bg-background border-border text-foreground focus:border-primary"
@@ -336,34 +451,41 @@ export default function NewPaymentPage() {
                   />
                 </div>
 
-                {/* Amount */}
+                {/* Total Amount */}
                 <div className="space-y-2">
-                  <Label htmlFor="payment_amount" className="text-foreground">
+                  <Label htmlFor="total_amount" className="text-foreground">
                     <span className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
-                      Amount (USD) *
+                      Total Amount (USD) *
                     </span>
                   </Label>
                   <Input
-                    id="payment_amount"
-                    name="payment_amount"
+                    id="total_amount"
+                    name="total_amount"
                     type="number"
                     step="0.01"
-                    value={formData.payment_amount}
+                    value={formData.total_amount}
                     onChange={handleChange}
                     placeholder="0.00"
                     required
-                    disabled={loading}
-                    className="bg-background border-border text-foreground focus:border-primary"
+                    disabled={true} // Auto-calculated hai
+                    className="bg-muted border-border text-foreground"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Auto-calculated from creator allocations
+                  </p>
                 </div>
 
                 {/* Currency */}
                 <div className="space-y-2">
-                  <Label htmlFor="currency" className="text-foreground">Currency</Label>
-                  <Select 
-                    value={formData.currency} 
-                    onValueChange={(value) => handleSelectChange('currency', value)}
+                  <Label htmlFor="currency" className="text-foreground">
+                    Currency
+                  </Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) =>
+                      handleSelectChange("currency", value)
+                    }
                     disabled={loading}
                   >
                     <SelectTrigger className="bg-background border-border text-foreground">
@@ -386,18 +508,26 @@ export default function NewPaymentPage() {
                       Linked Campaign (Optional)
                     </span>
                   </Label>
-                  <Select 
-                    value={formData.campaign_id} 
-                    onValueChange={(value) => handleSelectChange('campaign_id', value)}
+                  <Select
+                    value={formData.campaign_id}
+                    onValueChange={(value) =>
+                      handleSelectChange("campaign_id", value)
+                    }
                     disabled={loading}
                   >
                     <SelectTrigger className="bg-background border-border text-foreground">
                       <SelectValue placeholder="Select campaign" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border max-h-[300px]">
-                      <SelectItem value="none" className="text-foreground">None</SelectItem>
+                      <SelectItem value="none" className="text-foreground">
+                        None
+                      </SelectItem>
                       {campaigns.map((campaign) => (
-                        <SelectItem key={campaign.id} value={campaign.id} className="text-foreground">
+                        <SelectItem
+                          key={campaign.id}
+                          value={campaign.id}
+                          className="text-foreground"
+                        >
                           <div className="flex items-center justify-between w-full">
                             <span>{campaign.brand_name}</span>
                             {campaign.creators_price && (
@@ -412,51 +542,25 @@ export default function NewPaymentPage() {
                   </Select>
                 </div>
 
-                {/* Creator */}
-                <div className="space-y-2">
-                  <Label htmlFor="creator_id" className="text-foreground">
-                    <span className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Creator (Optional)
-                    </span>
-                  </Label>
-                  <Select 
-                    value={formData.creator_id} 
-                    onValueChange={(value) => handleSelectChange('creator_id', value)}
-                    disabled={loading}
-                  >
-                    <SelectTrigger className="bg-background border-border text-foreground">
-                      <SelectValue placeholder="Select creator" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border max-h-[300px]">
-                      <SelectItem value="none" className="text-foreground">None</SelectItem>
-                      {creators.map((creator) => (
-                        <SelectItem key={creator.id} value={creator.id} className="text-foreground">
-                          <div className="flex items-center justify-between w-full">
-                            <span>{creator.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {creator.primary_category}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 {/* Payment Method */}
                 <div className="space-y-2">
-                  <Label htmlFor="payment_method" className="text-foreground">Payment Method</Label>
-                  <Select 
-                    value={formData.payment_method} 
-                    onValueChange={(value) => handleSelectChange('payment_method', value)}
+                  <Label htmlFor="payment_method" className="text-foreground">
+                    Payment Method
+                  </Label>
+                  <Select
+                    value={formData.payment_method}
+                    onValueChange={(value) =>
+                      handleSelectChange("payment_method", value)
+                    }
                     disabled={loading}
                   >
                     <SelectTrigger className="bg-background border-border text-foreground">
                       <SelectValue placeholder="Select method" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="bank_transfer">
+                        Bank Transfer
+                      </SelectItem>
                       <SelectItem value="upi">UPI</SelectItem>
                       <SelectItem value="credit_card">Credit Card</SelectItem>
                       <SelectItem value="paypal">PayPal</SelectItem>
@@ -475,18 +579,29 @@ export default function NewPaymentPage() {
                       Paid By (Optional)
                     </span>
                   </Label>
-                  <Select 
-                    value={formData.paid_by} 
-                    onValueChange={(value) => handleSelectChange('paid_by', value)}
+                  <Select
+                    value={formData.paid_by}
+                    onValueChange={(value) =>
+                      handleSelectChange("paid_by", value)
+                    }
                     disabled={loading}
                   >
                     <SelectTrigger className="bg-background border-border text-foreground">
                       <SelectValue placeholder="Select payer" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border max-h-[300px]">
-                      <SelectItem value="_user_role" className="text-foreground">Not specified</SelectItem>
+                      <SelectItem
+                        value="not-specified"
+                        className="text-foreground"
+                      >
+                        Not specified
+                      </SelectItem>
                       {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id} className="text-foreground">
+                        <SelectItem
+                          key={user.id}
+                          value={user.id}
+                          className="text-foreground"
+                        >
                           <div className="flex items-center gap-2">
                             <span>{user.name || user.email}</span>
                             <span className="text-xs text-muted-foreground capitalize">
@@ -539,28 +654,48 @@ export default function NewPaymentPage() {
 
                 {/* Status */}
                 <div className="space-y-2">
-                  <Label htmlFor="status" className="text-foreground">Status</Label>
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={(value) => handleSelectChange('status', value)}
+                  <Label htmlFor="status" className="text-foreground">
+                    Status
+                  </Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) =>
+                      handleSelectChange("status", value)
+                    }
                     disabled={loading}
                   >
                     <SelectTrigger className="bg-background border-border text-foreground">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
-                      <SelectItem value="draft" className="text-foreground">Draft</SelectItem>
-                      <SelectItem value="pending" className="text-foreground">Pending</SelectItem>
-                      <SelectItem value="approved" className="text-foreground">Approved</SelectItem>
-                      <SelectItem value="processing" className="text-foreground">Processing</SelectItem>
-                      <SelectItem value="on_hold" className="text-foreground">On Hold</SelectItem>
+                      <SelectItem value="draft" className="text-foreground">
+                        Draft
+                      </SelectItem>
+                      <SelectItem value="pending" className="text-foreground">
+                        Pending
+                      </SelectItem>
+                      <SelectItem value="approved" className="text-foreground">
+                        Approved
+                      </SelectItem>
+                      <SelectItem
+                        value="processing"
+                        className="text-foreground"
+                      >
+                        Processing
+                      </SelectItem>
+                      <SelectItem value="on_hold" className="text-foreground">
+                        On Hold
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Payment Reference */}
                 <div className="space-y-2">
-                  <Label htmlFor="payment_reference" className="text-foreground">
+                  <Label
+                    htmlFor="payment_reference"
+                    className="text-foreground"
+                  >
                     <span className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
                       Payment Reference
@@ -578,9 +713,145 @@ export default function NewPaymentPage() {
                 </div>
               </div>
 
+              {/* Multiple Creators Section */}
+              <div className="space-y-4 pt-4 border-t border-border">
+                <div className="flex justify-between items-center">
+                  <Label className="text-foreground font-medium">
+                    <span className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Creators Allocation *
+                    </span>
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addCreator}
+                    disabled={loading}
+                    className="border-border text-foreground hover:bg-accent"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Creator
+                  </Button>
+                </div>
+
+                {selectedCreators.map((creator, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-muted/50 rounded-lg relative"
+                  >
+                    <div className="md:col-span-5">
+                      <Label className="text-xs text-muted-foreground mb-1 block">
+                        Select Creator
+                      </Label>
+                      <Select
+                        value={creator.creator_id}
+                        onValueChange={(value) =>
+                          handleCreatorChange(index, "creator_id", value)
+                        }
+                        disabled={loading}
+                      >
+                        <SelectTrigger className="bg-background border-border text-foreground">
+                          <SelectValue placeholder="Select creator" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-border max-h-[300px]">
+                          <SelectItem
+                            value="select-creator"
+                            className="text-foreground"
+                          >
+                            Choose creator...
+                          </SelectItem>
+                          {creators.map((c) => (
+                            <SelectItem
+                              key={c.id}
+                              value={c.id}
+                              className="text-foreground"
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <span>{c.name}</span>
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  {c.primary_category}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <Label className="text-xs text-muted-foreground mb-1 block">
+                        Commission %
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={creator.commission_percentage}
+                        onChange={(e) =>
+                          handleCreatorChange(
+                            index,
+                            "commission_percentage",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="10%"
+                        disabled={loading}
+                        className="bg-background border-border text-foreground focus:border-primary"
+                      />
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <Label className="text-xs text-muted-foreground mb-1 block">
+                        Amount (USD) *
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={creator.amount}
+                        onChange={(e) =>
+                          handleCreatorChange(index, "amount", e.target.value)
+                        }
+                        placeholder="0.00"
+                        required
+                        disabled={loading}
+                        className="bg-background border-border text-foreground focus:border-primary"
+                      />
+                    </div>
+
+                    <div className="md:col-span-1 flex items-end justify-end">
+                      {selectedCreators.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCreator(index)}
+                          disabled={loading}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  * Add multiple creators and specify individual amounts. Total
+                  amount will be calculated automatically.
+                </p>
+              </div>
+
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="payment_description" className="text-foreground">Description</Label>
+                <Label
+                  htmlFor="payment_description"
+                  className="text-foreground"
+                >
+                  Description
+                </Label>
                 <Textarea
                   id="payment_description"
                   name="payment_description"
@@ -595,7 +866,9 @@ export default function NewPaymentPage() {
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-foreground">Internal Notes</Label>
+                <Label htmlFor="notes" className="text-foreground">
+                  Internal Notes
+                </Label>
                 <Textarea
                   id="notes"
                   name="notes"
@@ -618,8 +891,8 @@ export default function NewPaymentPage() {
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={loading}
                   className="bg-primary text-primary-foreground hover:opacity-90"
                 >

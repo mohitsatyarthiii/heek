@@ -30,13 +30,13 @@ export default function Sidebar({ onLogout }) {
   const navItems = [
     { 
       href: "/dashboard", 
-      label: "Creators Database", 
+      label: "Dashboard", 
       icon: LayoutDashboard,
       description: "Overview and assignments"
     },
     { 
       href: "/dashboard/creators", 
-      label: "Creators", 
+      label: "Creators Database", 
       icon: Users,
       description: "Manage creator profiles"
     },
