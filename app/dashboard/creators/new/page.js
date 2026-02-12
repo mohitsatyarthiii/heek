@@ -22,14 +22,20 @@ import {
   ArrowLeft,
   Save,
   Upload,
-  FileText,
   Users,
   X,
   CheckCircle,
   Download,
-  Grid,
-  List,
   Plus,
+  Link2,
+  Instagram,
+  Youtube,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Globe,
+  Twitch,
+  Music,
 } from "lucide-react";
 
 export default function NewCreatorPage() {
@@ -58,20 +64,62 @@ export default function NewCreatorPage() {
     management_type: "",
     content_language: "",
     audience_geo_split: "",
-    platforms: [],
+    platforms: [], // For backward compatibility
+    platform_links: [], // New: array of {platform, url, icon}
   });
 
-  const platforms = [
-    "Instagram",
-    "YouTube",
-    "TikTok",
-    "Facebook",
-    "Twitter / X",
-    "Snapchat",
-    "LinkedIn",
-    "Pinterest",
-    "Twitch",
-    "Blog / Website",
+  // Platform configuration with icons
+  const platformConfigs = [
+    { 
+      name: "Instagram", 
+      icon: Instagram,
+      placeholder: "https://instagram.com/username",
+      color: "text-pink-600 dark:text-pink-400"
+    },
+    { 
+      name: "YouTube", 
+      icon: Youtube,
+      placeholder: "https://youtube.com/@channel",
+      color: "text-red-600 dark:text-red-400"
+    },
+    { 
+      name: "TikTok", 
+      icon: Music,
+      placeholder: "https://tiktok.com/@username",
+      color: "text-black dark:text-white"
+    },
+    { 
+      name: "Facebook", 
+      icon: Facebook,
+      placeholder: "https://facebook.com/username",
+      color: "text-blue-600 dark:text-blue-400"
+    },
+    { 
+      name: "Twitter / X", 
+      icon: Twitter,
+      placeholder: "https://twitter.com/username",
+      color: "text-sky-500 dark:text-sky-400"
+    },
+   
+    { 
+      name: "LinkedIn", 
+      icon: Linkedin,
+      placeholder: "https://linkedin.com/in/username",
+      color: "text-blue-700 dark:text-blue-500"
+    },
+    
+    { 
+      name: "Twitch", 
+      icon: Twitch,
+      placeholder: "https://twitch.tv/username",
+      color: "text-purple-600 dark:text-purple-400"
+    },
+    { 
+      name: "Blog / Website", 
+      icon: Globe,
+      placeholder: "https://yourwebsite.com",
+      color: "text-gray-600 dark:text-gray-400"
+    },
   ];
 
   const handleChange = (e) => {
@@ -83,6 +131,54 @@ export default function NewCreatorPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle platform link change
+  const handlePlatformLinkChange = (platformName, url) => {
+    setFormData((prev) => {
+      const existingLinks = [...prev.platform_links];
+      const existingIndex = existingLinks.findIndex(
+        (link) => link.platform === platformName
+      );
+
+      if (existingIndex >= 0) {
+        if (url.trim() === "") {
+          // Remove if URL is empty
+          existingLinks.splice(existingIndex, 1);
+        } else {
+          // Update existing
+          existingLinks[existingIndex] = { 
+            platform: platformName, 
+            url: url.trim(),
+            added_at: new Date().toISOString()
+          };
+        }
+      } else if (url.trim() !== "") {
+        // Add new
+        existingLinks.push({ 
+          platform: platformName, 
+          url: url.trim(),
+          added_at: new Date().toISOString()
+        });
+      }
+
+      // Update platforms array for backward compatibility
+      const platforms = existingLinks.map(link => link.platform);
+
+      return { 
+        ...prev, 
+        platform_links: existingLinks,
+        platforms: platforms
+      };
+    });
+  };
+
+  // Get URL for a specific platform
+  const getPlatformUrl = (platformName) => {
+    const link = formData.platform_links.find(
+      (link) => link.platform === platformName
+    );
+    return link ? link.url : "";
+  };
+
   const handleSingleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -92,7 +188,6 @@ export default function NewCreatorPage() {
     try {
       const supabase = createClient();
 
-      // Get current session
       const {
         data: { session },
         error: sessionError,
@@ -102,7 +197,6 @@ export default function NewCreatorPage() {
         throw new Error("Please login first");
       }
 
-      // Get user profile
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
@@ -115,7 +209,6 @@ export default function NewCreatorPage() {
         );
       }
 
-      // Check permission
       const userRole = profile.role;
       if (!["admin", "manager"].includes(userRole)) {
         throw new Error(
@@ -123,7 +216,7 @@ export default function NewCreatorPage() {
         );
       }
 
-      // Prepare data
+      // Prepare data with platform_links
       const creatorData = {
         name: formData.name || null,
         email: formData.email || null,
@@ -156,13 +249,13 @@ export default function NewCreatorPage() {
         management_type: formData.management_type || null,
         content_language: formData.content_language || null,
         audience_geo_split: formData.audience_geo_split || null,
-        platforms: formData.platforms,
+        platforms: formData.platform_links.map(link => link.platform), // Keep for backward compatibility
+        platform_links: formData.platform_links, // New: store full links
         created_by: session.user.id,
         status: "pending",
         is_verified: false,
       };
 
-      // Insert creator
       const { error: insertError } = await supabase
         .from("creators")
         .insert([creatorData]);
@@ -179,7 +272,6 @@ export default function NewCreatorPage() {
         }
       }
 
-      // Success
       setSuccess("Creator created successfully!");
       setTimeout(() => {
         router.push("/dashboard/creators");
@@ -211,7 +303,6 @@ export default function NewCreatorPage() {
     const headers = lines[0].split(",").map((h) => h.trim());
     const preview = [];
 
-    // Show first 5 rows as preview
     for (let i = 1; i < Math.min(6, lines.length); i++) {
       if (lines[i].trim()) {
         const values = lines[i].split(",");
@@ -248,7 +339,6 @@ export default function NewCreatorPage() {
         throw new Error("Please login first");
       }
 
-      // Get user profile for permission check
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
@@ -279,6 +369,7 @@ export default function NewCreatorPage() {
           created_by: session.user.id,
           status: "pending",
           is_verified: false,
+          platform_links: [], // Initialize empty array for platform links
         };
 
         headers.forEach((header, index) => {
@@ -343,13 +434,28 @@ export default function NewCreatorPage() {
             case "audience_geo_split":
               creator.audience_geo_split = value;
               break;
+            // Handle platform links
+            default:
+              // Check if header starts with "platform_" 
+              if (header.toLowerCase().startsWith("platform_")) {
+                const platformName = header.replace("platform_", "").replace(/_/g, " ");
+                if (value) {
+                  creator.platform_links.push({
+                    platform: platformName,
+                    url: value,
+                    added_at: new Date().toISOString()
+                  });
+                }
+              }
+              break;
           }
         });
 
+        // Set platforms array from platform_links
+        creator.platforms = creator.platform_links.map(link => link.platform);
         creators.push(creator);
       }
 
-      // Insert all creators
       const { error: insertError } = await supabase
         .from("creators")
         .insert(creators);
@@ -372,6 +478,9 @@ export default function NewCreatorPage() {
   };
 
   const downloadTemplate = () => {
+    // Generate platform columns for template
+    const platformColumns = platformConfigs.map(p => `platform_${p.name.replace(/ /g, "_")}_link`).join(",");
+    
     const headers = [
       "Name",
       "Email",
@@ -387,12 +496,17 @@ export default function NewCreatorPage() {
       "Management Type",
       "Content Language",
       "Audience Geo Split",
-    ];
+      platformColumns // Add platform link columns
+    ].join(",");
+
+    const samplePlatformLinks = platformConfigs.map(p => 
+      p.name === "Instagram" ? "https://instagram.com/johndoe" : 
+      p.name === "YouTube" ? "https://youtube.com/@johndoe" : ""
+    ).join(",");
 
     const template =
-      headers.join(",") +
-      "\n" +
-      "John Doe,john@example.com,+91 9876543210,India,India,Fashion,Fashion,Beauty,Sustainable Fashion,Instagram Posts,YouTube Videos,Paid ₹50k for IG post,4,Self-Managed,English,Hindi,India 70%,US 20%,Others 10%";
+      headers + "\n" +
+      `John Doe,john@example.com,+91 9876543210,India,India,Fashion,"Fashion,Beauty","Sustainable Fashion","Instagram Posts,YouTube Videos",Paid ₹50k for IG post,4,Self-Managed,English,"India 70%,US 20%,Others 10%",${samplePlatformLinks}`;
 
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -498,7 +612,11 @@ export default function NewCreatorPage() {
               <div className="flex border border-border rounded-lg overflow-hidden bg-background">
                 <button
                   onClick={() => setUploadMode("single")}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${uploadMode === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${
+                    uploadMode === "single" 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
                 >
                   <Plus className="h-4 w-4" />
                   Single Entry
@@ -506,7 +624,11 @@ export default function NewCreatorPage() {
                 <div className="w-px bg-border"></div>
                 <button
                   onClick={() => setUploadMode("bulk")}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${uploadMode === "bulk" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${
+                    uploadMode === "bulk" 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
                 >
                   <Upload className="h-4 w-4" />
                   Bulk CSV Upload
@@ -839,36 +961,71 @@ export default function NewCreatorPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-foreground">Platforms Used</Label>
-
-                  <div className="border border-border rounded-lg p-3 space-y-2 bg-background">
-                    {platforms.map((platform) => (
-                      <label
-                        key={platform}
-                        className="flex items-center gap-2 text-sm text-foreground cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.platforms.includes(platform)}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setFormData((prev) => ({
-                              ...prev,
-                              platforms: checked
-                                ? [...prev.platforms, platform]
-                                : prev.platforms.filter((p) => p !== platform),
-                            }));
-                          }}
-                          className="accent-primary"
-                        />
-                        {platform}
-                      </label>
-                    ))}
+                {/* Platforms with Links Section - UPDATED */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-foreground text-base font-semibold">
+                      Social Media Profiles
+                    </Label>
+                    <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-full">
+                      Add platform links
+                    </span>
                   </div>
-
+                  
+                  <div className="border border-border rounded-lg divide-y divide-border bg-background">
+                    {platformConfigs.map((platform) => {
+                      const Icon = platform.icon;
+                      const url = getPlatformUrl(platform.name);
+                      
+                      return (
+                        <div key={platform.name} className="p-4">
+                          <div className="flex flex-col md:flex-row md:items-center gap-3">
+                            <div className="flex items-center gap-3 md:w-1/4">
+                              <div className={`p-2 rounded-lg bg-accent/50 ${platform.color}`}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <span className="font-medium text-foreground">
+                                {platform.name}
+                              </span>
+                            </div>
+                            
+                            <div className="flex-1 flex items-center gap-2">
+                              <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <Input
+                                type="url"
+                                value={url}
+                                onChange={(e) => 
+                                  handlePlatformLinkChange(platform.name, e.target.value)
+                                }
+                                placeholder={platform.placeholder}
+                                className="flex-1 bg-background border-border text-foreground focus:border-primary"
+                              />
+                              {url && (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 hover:bg-accent rounded-md transition-colors"
+                                >
+                                  <Globe className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Optional: Show hint for required platforms */}
+                          {platform.name === "Instagram" && (
+                            <p className="text-xs text-muted-foreground mt-2 ml-2 md:ml-8">
+                              Recommended: Add Instagram for better profile visibility
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
                   <p className="text-xs text-muted-foreground">
-                    Select all platforms where this creator is active
+                    Add links to creator's social media profiles. These will be displayed as clickable icons on the dashboard.
                   </p>
                 </div>
 
@@ -936,7 +1093,6 @@ export default function NewCreatorPage() {
                 </div>
               )}
 
-              {/* CSV Upload Section */}
               <div className="space-y-6">
                 <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-accent/30 transition-colors">
                   <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -976,7 +1132,6 @@ export default function NewCreatorPage() {
                   </div>
                 </div>
 
-                {/* CSV Preview */}
                 {csvPreview.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium text-foreground">
@@ -1026,7 +1181,7 @@ export default function NewCreatorPage() {
                   </div>
                 )}
 
-                {/* Instructions */}
+                {/* Updated Instructions for CSV */}
                 <Card className="bg-accent border-border">
                   <CardContent className="p-4">
                     <h4 className="font-medium text-foreground mb-2">
@@ -1034,25 +1189,24 @@ export default function NewCreatorPage() {
                     </h4>
                     <ul className="space-y-1 text-sm text-muted-foreground">
                       <li>• First row should contain column headers</li>
-                      <li>
-                        • Required columns: <strong>Name</strong>,{" "}
-                        <strong>Primary Category</strong>
-                      </li>
-                      <li>
-                        • Optional columns: All other fields from single entry
-                        form
-                      </li>
-                      <li>
-                        • Separate multiple values with commas (for categories,
-                        niches, deliverables)
-                      </li>
+                      <li>• Required columns: <strong>Name</strong>, <strong>Primary Category</strong></li>
+                      <li>• Optional columns: All other fields from single entry form</li>
+                      <li>• <strong className="text-foreground">Platform Links:</strong> Add columns with format <code className="bg-background px-1 py-0.5 rounded">platform_PlatformName_link</code></li>
+                      <li>• Example: <code className="bg-background px-1 py-0.5 rounded">platform_Instagram_link, platform_YouTube_link, platform_TikTok_link</code></li>
+                      <li>• Separate multiple values with commas (for categories, niches, deliverables)</li>
                       <li>• Save file as UTF-8 encoded CSV</li>
                       <li>• Maximum file size: 10MB</li>
                     </ul>
+                    
+                    <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 flex items-start gap-1">
+                        <span className="font-bold">💡 Tip:</span>
+                        <span>Download the template to see the exact column format for platform links</span>
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Action Buttons */}
                 <div className="flex justify-end gap-3 pt-4 border-t border-border">
                   <Button
                     type="button"

@@ -666,29 +666,65 @@ export default function CreatorsPage() {
                     </td>
 
                     {/* Platforms - Only Icons */}
-                    <td className="p-2">
-                      <div className="flex items-center gap-0.5">
-                        {creator.platforms?.slice(0, 3).map((p) => {
-                          const platform = PLATFORM_MAP[p];
-                          const Icon = platform?.icon || Globe;
-                          return (
-                            <Tooltip key={p}>
-                              <TooltipTrigger>
-                                <Icon className={`h-3.5 w-3.5 ${platform?.color || ""}`} />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="text-[10px]">
-                                {p}
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })}
-                        {creator.platforms?.length > 3 && (
-                          <span className="text-[10px] text-muted-foreground ml-0.5">
-                            +{creator.platforms.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                  {/* Platforms - Line by Line with Links */}
+<td className="p-2 align-top">
+  <div className="space-y-1.5">
+    {creator.platform_links && creator.platform_links.length > 0 ? (
+      creator.platform_links.map((link, idx) => {
+        const platform = PLATFORM_MAP[link.platform];
+        const Icon = platform?.icon || Globe;
+        
+        // Format URL for display
+        let displayText = link.platform;
+        try {
+          const url = new URL(link.url);
+          // Show username/handle from URL
+          const pathSegments = url.pathname.split('/').filter(Boolean);
+          if (pathSegments.length > 0) {
+            displayText = `@${pathSegments[pathSegments.length - 1]}`;
+          } else {
+            displayText = url.hostname.replace('www.', '');
+          }
+        } catch {
+          displayText = link.platform;
+        }
+
+        return (
+          <div key={idx} className="flex items-center gap-2">
+            <Icon className={`h-3.5 w-3.5 shrink-0 ${platform?.color || ""}`} />
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-muted-foreground hover:text-foreground hover:underline truncate max-w-[120px]"
+              title={link.url}
+            >
+              {displayText}
+            </a>
+          </div>
+        );
+      })
+    ) : (
+      // Fallback if no links
+      <div className="flex items-center gap-1 flex-wrap">
+        {creator.platforms?.map((p, idx) => {
+          const platform = PLATFORM_MAP[p];
+          const Icon = platform?.icon || Globe;
+          return (
+            <Tooltip key={idx}>
+              <TooltipTrigger>
+                <Icon className={`h-3.5 w-3.5 ${platform?.color || ""}`} />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px]">
+                {p}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</td>
 
                     {/* Category */}
                     <td className="p-2">
