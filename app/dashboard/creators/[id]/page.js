@@ -15,6 +15,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Instagram,
+  Youtube,
+  Twitter,
+  Facebook,
+  Linkedin,
+} from "lucide-react";
+import {
   ArrowLeft,
   Edit,
   Mail,
@@ -41,6 +48,19 @@ export default function CreatorDetailPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const PLATFORM_ICONS = {
+  Instagram: { icon: Instagram, color: "text-pink-500" },
+  YouTube: { icon: Youtube, color: "text-red-500" },
+  "Twitter / X": { icon: Twitter, color: "text-sky-500" },
+  Facebook: { icon: Facebook, color: "text-blue-600" },
+  LinkedIn: { icon: Linkedin, color: "text-blue-700" },
+  TikTok: { icon: Globe, color: "text-black dark:text-white" },
+  Snapchat: { icon: Globe, color: "text-yellow-400" },
+  Pinterest: { icon: Globe, color: "text-red-600" },
+  Twitch: { icon: Globe, color: "text-purple-600" },
+  "Blog / Website": { icon: Globe, color: "text-gray-600" },
+};
+
   useEffect(() => {
     if (params.id) {
       fetchCreatorDetails();
@@ -60,12 +80,7 @@ export default function CreatorDetailPage() {
 
       if (creatorError) throw creatorError;
 
-      // Fetch platform profiles
-      const { data: platforms } = await supabase
-        .from('creator_platform_profiles')
-        .select('*')
-        .eq('creator_id', params.id)
-        .order('platform', { ascending: true });
+    
 
       // Fetch linked tasks
       const { data: creatorTasks } = await supabase
@@ -88,7 +103,7 @@ export default function CreatorDetailPage() {
         .order('created_at', { ascending: false });
 
       setCreator(creatorData);
-      setPlatformProfiles(platforms || []);
+      
       setTasks(creatorTasks || []);
       setCampaigns(creatorCampaigns || []);
     } catch (error) {
@@ -148,19 +163,15 @@ export default function CreatorDetailPage() {
             <Edit className="h-4 w-4 mr-2" />
             Edit Creator
           </Button>
-          <Button onClick={handleAddPlatform}>
-            + Add Platform
-          </Button>
+          
         </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="platforms">Platforms ({platformProfiles.length})</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns ({campaigns.length})</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
+          
+          
         </TabsList>
 
         <TabsContent value="overview">
@@ -316,6 +327,32 @@ export default function CreatorDetailPage() {
                     )}
                   </div>
                 </div>
+
+                <div className="pt-4 border-t">
+  <p className="text-sm text-gray-500 mb-3">Active Platforms</p>
+
+  {creator.platforms && creator.platforms.length > 0 ? (
+    <div className="flex flex-wrap gap-3">
+      {creator.platforms.map((platform) => {
+        const IconConfig = PLATFORM_ICONS[platform];
+        const Icon = IconConfig?.icon || Globe;
+        const color = IconConfig?.color || "text-gray-500";
+
+        return (
+          <div
+            key={platform}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-white dark:bg-background"
+          >
+            <Icon className={`h-4 w-4 ${color}`} />
+            <span className="text-sm font-medium">{platform}</span>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p className="text-sm text-gray-400">No platforms added</p>
+  )}
+</div>
                 
                 <div className="pt-4 border-t">
                   <p className="text-sm text-gray-500 mb-2">Created</p>
@@ -332,105 +369,7 @@ export default function CreatorDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="platforms">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Platform Profiles</CardTitle>
-              <Button size="sm" onClick={handleAddPlatform}>
-                + Add Platform
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {platformProfiles.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Globe className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium">No platform profiles</h3>
-                  <p className="text-gray-500 mt-2">Add platforms to see them here</p>
-                  <Button onClick={handleAddPlatform} className="mt-4">
-                    + Add First Platform
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {platformProfiles.map((platform) => (
-                    <Card key={platform.id}>
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <Badge className="capitalize">{platform.platform}</Badge>
-                              {platform.is_primary && (
-                                <Badge variant="default" className="bg-blue-100 text-blue-800">
-                                  Primary
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <div>
-                              <p className="font-medium text-lg">{platform.handle}</p>
-                              <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
-                                  <Globe className="h-3 w-3" />
-                                  {platform.country}
-                                </span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <Tag className="h-3 w-3" />
-                                  {platform.niche}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            {platform.profile_url && (
-                              <a 
-                                href={platform.profile_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline text-sm"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                Visit Profile
-                              </a>
-                            )}
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Edit</Button>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                              Remove
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Platform Stats (if available) */}
-                        {(platform.followers || platform.engagement_rate) && (
-                          <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t">
-                            {platform.followers && (
-                              <div>
-                                <p className="text-sm text-gray-500">Followers</p>
-                                <p className="font-medium text-lg">
-                                  {platform.followers.toLocaleString()}
-                                </p>
-                              </div>
-                            )}
-                            {platform.engagement_rate && (
-                              <div>
-                                <p className="text-sm text-gray-500">Engagement Rate</p>
-                                <p className="font-medium text-lg">
-                                  {platform.engagement_rate}%
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+       
 
         <TabsContent value="tasks">
           <Card>

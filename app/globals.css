@@ -226,3 +226,94 @@ body {
   background: var(--foreground);
 }
 
+
+/* Dropdown Menu Styles - Add this in your theme file */
+
+/* Popover/Dropdown Menu Background */
+.bg-popover {
+  background-color: var(--popover);
+}
+
+.text-popover-foreground {
+  color: var(--popover-foreground);
+}
+
+/* Command/Dropdown Items */
+[cmdk-root],
+[data-radix-popper-content-wrapper] {
+  background-color: transparent !important;
+}
+
+[cmdk-item],
+.dropdown-menu-item,
+[role="menuitem"],
+[role="option"] {
+  background-color: transparent;
+}
+
+[cmdk-item][data-selected="true"],
+[cmdk-item]:hover,
+.dropdown-menu-item:hover,
+[role="menuitem"]:hover,
+[role="option"]:hover {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Command/Dropdown Group Headers */
+[cmdk-group-heading],
+.dropdown-menu-label {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.5rem 0.5rem 0.25rem;
+}
+
+/* Separators */
+[cmdk-separator],
+.dropdown-menu-separator {
+  background-color: var(--border);
+  height: 1px;
+  margin: 0.25rem 0;
+}
+
+/* ScrollArea in Dropdown */
+[data-radix-scroll-area-viewport] {
+  background-color: transparent;
+}
+
+/* Command Input */
+[cmdk-input] {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+[cmdk-input]::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* Empty State */
+[cmdk-empty] {
+  color: var(--muted-foreground);
+  padding: 1rem;
+  text-align: center;
+}
+
+/* Add these to your :root and .dark sections */
+
+:root {
+  /* ... existing variables ... */
+  
+  /* Add these two important variables */
+  --popover: #ffffff;
+  --popover-foreground: #020817;
+}
+
+.dark {
+  /* ... existing dark variables ... */
+  
+  /* Add these for dark mode */
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+}

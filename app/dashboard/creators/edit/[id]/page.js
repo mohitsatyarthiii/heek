@@ -62,47 +62,53 @@ const CreatorStatusBadge = ({ status, isVerified }) => {
       text: "text-yellow-700 dark:text-yellow-300",
       border: "border-yellow-200 dark:border-yellow-800",
       icon: <Clock className="h-3 w-3" />,
-      label: "Pending"
+      label: "Pending",
     },
     active: {
       bg: "bg-green-100 dark:bg-green-900/30",
       text: "text-green-700 dark:text-green-300",
       border: "border-green-200 dark:border-green-800",
       icon: <CheckCircle className="h-3 w-3" />,
-      label: "Active"
+      label: "Active",
     },
     inactive: {
       bg: "bg-gray-100 dark:bg-gray-800",
       text: "text-gray-700 dark:text-gray-300",
       border: "border-gray-200 dark:border-gray-700",
       icon: <XCircle className="h-3 w-3" />,
-      label: "Inactive"
+      label: "Inactive",
     },
     blocked: {
       bg: "bg-red-100 dark:bg-red-900/30",
       text: "text-red-700 dark:text-red-300",
       border: "border-red-200 dark:border-red-800",
       icon: <Ban className="h-3 w-3" />,
-      label: "Blocked"
+      label: "Blocked",
     },
   };
 
-  const { bg, text, border, icon, label } = statusConfig[status] || statusConfig.pending;
+  const { bg, text, border, icon, label } =
+    statusConfig[status] || statusConfig.pending;
 
   return (
     <div className="flex items-center gap-2">
-      <Badge className={`${bg} ${text} ${border} flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium`}>
+      <Badge
+        className={`${bg} ${text} ${border} flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium`}
+      >
         {icon}
         {label}
       </Badge>
-      
+
       {isVerified ? (
         <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium">
           <BadgeCheck className="h-3 w-3" />
           Verified
         </Badge>
       ) : (
-        <Badge variant="outline" className="border-border text-muted-foreground flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium">
+        <Badge
+          variant="outline"
+          className="border-border text-muted-foreground flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
+        >
           <ShieldAlert className="h-3 w-3" />
           Unverified
         </Badge>
@@ -119,7 +125,7 @@ export default function EditCreatorPage() {
   const params = useParams();
   const { user } = useAuth();
   const { theme } = useTheme();
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -129,7 +135,7 @@ export default function EditCreatorPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isManager, setIsManager] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -146,6 +152,7 @@ export default function EditCreatorPage() {
     content_language: "",
     audience_geo_split: "",
     status: "pending",
+    platforms: [],
     is_verified: false,
     verified_at: null,
     verified_by: null,
@@ -153,22 +160,78 @@ export default function EditCreatorPage() {
 
   // Options for dropdowns
   const categories = [
-    "Fashion", "Beauty", "Lifestyle", "Travel", "Food",
-    "Fitness", "Technology", "Gaming", "Entertainment", "Education",
-    "Business", "Finance", "Parenting", "Health", "Sports",
-    "Music", "Art", "Photography", "Comedy", "News", "DIY", "Cars"
+    "Fashion",
+    "Beauty",
+    "Lifestyle",
+    "Travel",
+    "Food",
+    "Fitness",
+    "Technology",
+    "Gaming",
+    "Entertainment",
+    "Education",
+    "Business",
+    "Finance",
+    "Parenting",
+    "Health",
+    "Sports",
+    "Music",
+    "Art",
+    "Photography",
+    "Comedy",
+    "News",
+    "DIY",
+    "Cars",
+  ];
+
+  const platforms = [
+    "Instagram",
+    "YouTube",
+    "TikTok",
+    "Facebook",
+    "Twitter / X",
+    "Snapchat",
+    "LinkedIn",
+    "Pinterest",
+    "Twitch",
+    "Blog / Website",
   ];
 
   const countries = [
-    "India", "USA", "UK", "Canada", "Australia",
-    "Germany", "France", "Japan", "South Korea", "Singapore",
-    "UAE", "Brazil", "Mexico", "Spain", "Italy",
-    "Netherlands", "Sweden", "Norway", "Denmark", "Switzerland",
-    "Indonesia", "Thailand", "Vietnam", "Malaysia", "Philippines"
+    "India",
+    "USA",
+    "UK",
+    "Canada",
+    "Australia",
+    "Germany",
+    "France",
+    "Japan",
+    "South Korea",
+    "Singapore",
+    "UAE",
+    "Brazil",
+    "Mexico",
+    "Spain",
+    "Italy",
+    "Netherlands",
+    "Sweden",
+    "Norway",
+    "Denmark",
+    "Switzerland",
+    "Indonesia",
+    "Thailand",
+    "Vietnam",
+    "Malaysia",
+    "Philippines",
   ];
 
   const managementTypes = [
-    "Self-Managed", "Agency", "Management Company", "Hybrid", "Exclusive", "Talent Agency"
+    "Self-Managed",
+    "Agency",
+    "Management Company",
+    "Hybrid",
+    "Exclusive",
+    "Talent Agency",
   ];
 
   const brandFriendlyScores = [
@@ -180,10 +243,30 @@ export default function EditCreatorPage() {
   ];
 
   const statusOptions = [
-    { value: "pending", label: "Pending", icon: <Clock className="h-3 w-3" />, color: "yellow" },
-    { value: "active", label: "Active", icon: <CheckCircle className="h-3 w-3" />, color: "green" },
-    { value: "inactive", label: "Inactive", icon: <XCircle className="h-3 w-3" />, color: "gray" },
-    { value: "blocked", label: "Blocked", icon: <Ban className="h-3 w-3" />, color: "red" },
+    {
+      value: "pending",
+      label: "Pending",
+      icon: <Clock className="h-3 w-3" />,
+      color: "yellow",
+    },
+    {
+      value: "active",
+      label: "Active",
+      icon: <CheckCircle className="h-3 w-3" />,
+      color: "green",
+    },
+    {
+      value: "inactive",
+      label: "Inactive",
+      icon: <XCircle className="h-3 w-3" />,
+      color: "gray",
+    },
+    {
+      value: "blocked",
+      label: "Blocked",
+      icon: <Ban className="h-3 w-3" />,
+      color: "red",
+    },
   ];
 
   useEffect(() => {
@@ -202,13 +285,12 @@ export default function EditCreatorPage() {
         .eq("id", user.id)
         .single();
 
-      const admin = profile?.role === 'admin';
-      const manager = profile?.role === 'manager';
-      
+      const admin = profile?.role === "admin";
+      const manager = profile?.role === "manager";
+
       setIsAdmin(admin);
       setIsManager(manager);
       setCanEdit(admin || manager);
-      
     } catch (err) {
       console.error("Error checking permissions:", err);
     }
@@ -218,10 +300,10 @@ export default function EditCreatorPage() {
   const fetchCreator = async () => {
     setLoading(true);
     setError("");
-    
+
     try {
       const supabase = createClient();
-      
+
       // 1. Pehle creator fetch karo
       const { data: creatorData, error: fetchError } = await supabase
         .from("creators")
@@ -230,7 +312,7 @@ export default function EditCreatorPage() {
         .single();
 
       if (fetchError) throw fetchError;
-      
+
       if (!creatorData) {
         throw new Error("Creator not found");
       }
@@ -277,7 +359,7 @@ export default function EditCreatorPage() {
       };
 
       setCreator(completeCreatorData);
-      
+
       // Set form data
       setFormData({
         name: creatorData.name || "",
@@ -290,16 +372,17 @@ export default function EditCreatorPage() {
         sub_niches: creatorData.sub_niches || [],
         typical_deliverables: creatorData.typical_deliverables || [],
         past_rate_notes: creatorData.past_rate_notes || "",
-        brand_friendly_score: creatorData.brand_friendly_score?.toString() || "",
+        brand_friendly_score:
+          creatorData.brand_friendly_score?.toString() || "",
         management_type: creatorData.management_type || "",
         content_language: creatorData.content_language || "",
         audience_geo_split: creatorData.audience_geo_split || "",
         status: creatorData.status || "pending",
+        platforms: creatorData.platforms || [],
         is_verified: creatorData.is_verified || false,
         verified_at: creatorData.verified_at || null,
         verified_by: creatorData.verified_by || null,
       });
-
     } catch (err) {
       console.error("Error fetching creator:", err);
       setError(err.message);
@@ -310,16 +393,22 @@ export default function EditCreatorPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value === "none" ? null : value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value === "none" ? null : value,
+    }));
   };
 
   const handleArrayChange = (name, value) => {
-    const array = value.split(',').map(item => item.trim()).filter(item => item);
-    setFormData(prev => ({ ...prev, [name]: array }));
+    const array = value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item);
+    setFormData((prev) => ({ ...prev, [name]: array }));
   };
 
   const handleStatusChange = async (newStatus) => {
@@ -327,7 +416,7 @@ export default function EditCreatorPage() {
       setError("You don't have permission to change status");
       return;
     }
-    setFormData(prev => ({ ...prev, status: newStatus }));
+    setFormData((prev) => ({ ...prev, status: newStatus }));
   };
 
   const handleVerification = async (verify) => {
@@ -339,13 +428,13 @@ export default function EditCreatorPage() {
     setSaving(true);
     try {
       const supabase = createClient();
-      
+
       const updates = {
         is_verified: verify,
         verified_at: verify ? new Date().toISOString() : null,
         verified_by: verify ? user.id : null,
         updated_at: new Date().toISOString(),
-        updated_by: user.id
+        updated_by: user.id,
       };
 
       const { error: updateError } = await supabase
@@ -355,14 +444,15 @@ export default function EditCreatorPage() {
 
       if (updateError) throw updateError;
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        ...updates
+        ...updates,
       }));
 
-      setSuccess(verify ? "Creator verified successfully!" : "Verification removed");
+      setSuccess(
+        verify ? "Creator verified successfully!" : "Verification removed",
+      );
       fetchCreator();
-      
     } catch (err) {
       console.error("Error updating verification:", err);
       setError(err.message);
@@ -373,12 +463,12 @@ export default function EditCreatorPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!canEdit) {
       setError("You don't have permission to edit creators");
       return;
     }
-    
+
     setSaving(true);
     setError("");
     setSuccess("");
@@ -397,13 +487,16 @@ export default function EditCreatorPage() {
         sub_niches: formData.sub_niches,
         typical_deliverables: formData.typical_deliverables,
         past_rate_notes: formData.past_rate_notes || null,
-        brand_friendly_score: formData.brand_friendly_score ? parseInt(formData.brand_friendly_score) : null,
+        brand_friendly_score: formData.brand_friendly_score
+          ? parseInt(formData.brand_friendly_score)
+          : null,
         management_type: formData.management_type || null,
         content_language: formData.content_language || null,
         audience_geo_split: formData.audience_geo_split || null,
         status: formData.status,
+        platforms: formData.platforms,
         updated_at: new Date().toISOString(),
-        updated_by: user.id
+        updated_by: user.id,
       };
 
       if (isAdmin || isManager) {
@@ -423,7 +516,6 @@ export default function EditCreatorPage() {
 
       setSuccess("Creator updated successfully!");
       fetchCreator();
-      
     } catch (err) {
       console.error("Error updating creator:", err);
       setError(err.message);
@@ -441,7 +533,7 @@ export default function EditCreatorPage() {
     setSaving(true);
     try {
       const supabase = createClient();
-      
+
       const { error: deleteError } = await supabase
         .from("creators")
         .delete()
@@ -451,7 +543,6 @@ export default function EditCreatorPage() {
 
       router.push("/dashboard/creators");
       router.refresh();
-      
     } catch (err) {
       console.error("Error deleting creator:", err);
       setError(err.message);
@@ -463,12 +554,12 @@ export default function EditCreatorPage() {
 
   const formatDate = (dateString) => {
     if (!dateString) return "Never";
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -476,7 +567,9 @@ export default function EditCreatorPage() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-sm text-muted-foreground">Loading creator details...</p>
+        <p className="text-sm text-muted-foreground">
+          Loading creator details...
+        </p>
       </div>
     );
   }
@@ -503,9 +596,9 @@ export default function EditCreatorPage() {
       <div className="border-b border-border bg-card sticky top-0 z-10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => router.back()}
               className="text-foreground hover:bg-accent"
             >
@@ -514,16 +607,19 @@ export default function EditCreatorPage() {
             </Button>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-foreground">Edit Creator</h1>
+                <h1 className="text-2xl font-bold text-foreground">
+                  Edit Creator
+                </h1>
                 {creator && (
-                  <CreatorStatusBadge 
-                    status={creator.status} 
-                    isVerified={creator.is_verified} 
+                  <CreatorStatusBadge
+                    status={creator.status}
+                    isVerified={creator.is_verified}
                   />
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                ID: {params.id.slice(0, 8)}... • Last updated: {formatDate(creator?.updated_at)}
+                ID: {params.id.slice(0, 8)}... • Last updated:{" "}
+                {formatDate(creator?.updated_at)}
               </p>
             </div>
           </div>
@@ -584,7 +680,8 @@ export default function EditCreatorPage() {
                     Read-Only Mode
                   </p>
                   <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                    You have view-only access. Contact Admin or Manager to make changes.
+                    You have view-only access. Contact Admin or Manager to make
+                    changes.
                   </p>
                 </div>
               </div>
@@ -607,14 +704,16 @@ export default function EditCreatorPage() {
                   {statusOptions.map((option) => (
                     <Button
                       key={option.value}
-                      variant={formData.status === option.value ? "default" : "outline"}
+                      variant={
+                        formData.status === option.value ? "default" : "outline"
+                      }
                       size="sm"
                       onClick={() => handleStatusChange(option.value)}
                       disabled={saving || !canEdit}
                       className={
                         formData.status === option.value
                           ? `bg-${option.color}-600 hover:bg-${option.color}-700 text-white`
-                          : 'border-border text-foreground hover:bg-accent'
+                          : "border-border text-foreground hover:bg-accent"
                       }
                     >
                       {option.icon}
@@ -624,7 +723,8 @@ export default function EditCreatorPage() {
                 </div>
                 {creator?.status !== formData.status && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Status will be updated from {creator?.status} to {formData.status}
+                    Status will be updated from {creator?.status} to{" "}
+                    {formData.status}
                   </p>
                 )}
               </CardContent>
@@ -641,7 +741,9 @@ export default function EditCreatorPage() {
               <CardContent className="p-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Status</span>
+                    <span className="text-sm text-muted-foreground">
+                      Status
+                    </span>
                     <div className="flex items-center gap-2">
                       {formData.is_verified ? (
                         <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
@@ -649,24 +751,32 @@ export default function EditCreatorPage() {
                           Verified
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="border-border text-muted-foreground">
+                        <Badge
+                          variant="outline"
+                          className="border-border text-muted-foreground"
+                        >
                           <ShieldAlert className="h-3 w-3 mr-1" />
                           Unverified
                         </Badge>
                       )}
                     </div>
                   </div>
-                  
+
                   {creator?.verified_by_user && (
                     <>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Verified By</span>
+                        <span className="text-sm text-muted-foreground">
+                          Verified By
+                        </span>
                         <span className="text-sm font-medium text-foreground">
-                          {creator.verified_by_user.name || creator.verified_by_user.email}
+                          {creator.verified_by_user.name ||
+                            creator.verified_by_user.email}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Verified At</span>
+                        <span className="text-sm text-muted-foreground">
+                          Verified At
+                        </span>
                         <span className="text-sm text-foreground">
                           {formatDate(creator.verified_at)}
                         </span>
@@ -687,14 +797,16 @@ export default function EditCreatorPage() {
                 <Edit className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-foreground">Creator Information</CardTitle>
+                <CardTitle className="text-foreground">
+                  Creator Information
+                </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Edit creator details and preferences
                 </p>
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
@@ -733,7 +845,9 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground">Email</Label>
+                  <Label htmlFor="email" className="text-foreground">
+                    Email
+                  </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -750,7 +864,9 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-foreground">Phone</Label>
+                  <Label htmlFor="phone" className="text-foreground">
+                    Phone
+                  </Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -766,12 +882,16 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="country" className="text-foreground">Country</Label>
+                  <Label htmlFor="country" className="text-foreground">
+                    Country
+                  </Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                    <Select 
-                      value={formData.country || "none"} 
-                      onValueChange={(value) => handleSelectChange('country', value)}
+                    <Select
+                      value={formData.country || "none"}
+                      onValueChange={(value) =>
+                        handleSelectChange("country", value)
+                      }
                       disabled={saving || !canEdit}
                     >
                       <SelectTrigger className="pl-9 bg-background border-border text-foreground">
@@ -790,7 +910,9 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="primary_market" className="text-foreground">Primary Market</Label>
+                  <Label htmlFor="primary_market" className="text-foreground">
+                    Primary Market
+                  </Label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -811,9 +933,11 @@ export default function EditCreatorPage() {
                   </Label>
                   <div className="relative">
                     <Tag className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                    <Select 
-                      value={formData.primary_category || "none"} 
-                      onValueChange={(value) => handleSelectChange('primary_category', value)}
+                    <Select
+                      value={formData.primary_category || "none"}
+                      onValueChange={(value) =>
+                        handleSelectChange("primary_category", value)
+                      }
                       disabled={saving || !canEdit}
                       required
                     >
@@ -833,63 +957,134 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="secondary_categories" className="text-foreground">Secondary Categories</Label>
+                  <Label
+                    htmlFor="secondary_categories"
+                    className="text-foreground"
+                  >
+                    Secondary Categories
+                  </Label>
                   <div className="relative">
                     <Layers className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="secondary_categories"
                       name="secondary_categories"
-                      value={formData.secondary_categories?.join(', ')}
-                      onChange={(e) => handleArrayChange('secondary_categories', e.target.value)}
+                      value={formData.secondary_categories?.join(", ")}
+                      onChange={(e) =>
+                        handleArrayChange(
+                          "secondary_categories",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Fashion, Beauty, Lifestyle"
                       disabled={saving || !canEdit}
                       className="pl-9 bg-background border-border text-foreground focus:border-primary"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Separate with commas</p>
+                  <p className="text-xs text-muted-foreground">
+                    Separate with commas
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sub_niches" className="text-foreground">Sub Niches</Label>
+                  <Label htmlFor="sub_niches" className="text-foreground">
+                    Sub Niches
+                  </Label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="sub_niches"
                       name="sub_niches"
-                      value={formData.sub_niches?.join(', ')}
-                      onChange={(e) => handleArrayChange('sub_niches', e.target.value)}
+                      value={formData.sub_niches?.join(", ")}
+                      onChange={(e) =>
+                        handleArrayChange("sub_niches", e.target.value)
+                      }
                       placeholder="Sustainable Fashion, Skincare, Travel"
                       disabled={saving || !canEdit}
                       className="pl-9 bg-background border-border text-foreground focus:border-primary"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Separate with commas</p>
+                  <p className="text-xs text-muted-foreground">
+                    Separate with commas
+                  </p>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-foreground">Platforms Used</Label>
+
+                  <div className="border border-border rounded-lg p-3 bg-background grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {platforms.map((platform) => (
+                      <label
+                        key={platform}
+                        className="flex items-center gap-2 text-sm text-foreground cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.platforms.includes(platform)}
+                          disabled={saving || !canEdit}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setFormData((prev) => ({
+                              ...prev,
+                              platforms: checked
+                                ? [...prev.platforms, platform]
+                                : prev.platforms.filter((p) => p !== platform),
+                            }));
+                          }}
+                          className="accent-primary"
+                        />
+                        {platform}
+                      </label>
+                    ))}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Select all platforms where this creator is active
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="typical_deliverables" className="text-foreground">Typical Deliverables</Label>
+                  <Label
+                    htmlFor="typical_deliverables"
+                    className="text-foreground"
+                  >
+                    Typical Deliverables
+                  </Label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="typical_deliverables"
                       name="typical_deliverables"
-                      value={formData.typical_deliverables?.join(', ')}
-                      onChange={(e) => handleArrayChange('typical_deliverables', e.target.value)}
+                      value={formData.typical_deliverables?.join(", ")}
+                      onChange={(e) =>
+                        handleArrayChange(
+                          "typical_deliverables",
+                          e.target.value,
+                        )
+                      }
                       placeholder="Instagram Posts, YouTube Videos"
                       disabled={saving || !canEdit}
                       className="pl-9 bg-background border-border text-foreground focus:border-primary"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Separate with commas</p>
+                  <p className="text-xs text-muted-foreground">
+                    Separate with commas
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="brand_friendly_score" className="text-foreground">Brand Friendly Score (1-5)</Label>
+                  <Label
+                    htmlFor="brand_friendly_score"
+                    className="text-foreground"
+                  >
+                    Brand Friendly Score (1-5)
+                  </Label>
                   <div className="relative">
                     <Star className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                    <Select 
-                      value={formData.brand_friendly_score || "none"} 
-                      onValueChange={(value) => handleSelectChange('brand_friendly_score', value)}
+                    <Select
+                      value={formData.brand_friendly_score || "none"}
+                      onValueChange={(value) =>
+                        handleSelectChange("brand_friendly_score", value)
+                      }
                       disabled={saving || !canEdit}
                     >
                       <SelectTrigger className="pl-9 bg-background border-border text-foreground">
@@ -908,12 +1103,16 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="management_type" className="text-foreground">Management Type</Label>
+                  <Label htmlFor="management_type" className="text-foreground">
+                    Management Type
+                  </Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                    <Select 
-                      value={formData.management_type || "none"} 
-                      onValueChange={(value) => handleSelectChange('management_type', value)}
+                    <Select
+                      value={formData.management_type || "none"}
+                      onValueChange={(value) =>
+                        handleSelectChange("management_type", value)
+                      }
                       disabled={saving || !canEdit}
                     >
                       <SelectTrigger className="pl-9 bg-background border-border text-foreground">
@@ -932,7 +1131,9 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="content_language" className="text-foreground">Content Language</Label>
+                  <Label htmlFor="content_language" className="text-foreground">
+                    Content Language
+                  </Label>
                   <div className="relative">
                     <Languages className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -948,7 +1149,12 @@ export default function EditCreatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="audience_geo_split" className="text-foreground">Audience Geo Split</Label>
+                  <Label
+                    htmlFor="audience_geo_split"
+                    className="text-foreground"
+                  >
+                    Audience Geo Split
+                  </Label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -965,7 +1171,9 @@ export default function EditCreatorPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="past_rate_notes" className="text-foreground">Past Rate Notes</Label>
+                <Label htmlFor="past_rate_notes" className="text-foreground">
+                  Past Rate Notes
+                </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Textarea
@@ -986,25 +1194,35 @@ export default function EditCreatorPage() {
                 <CardContent className="p-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-xs text-muted-foreground">Created By</p>
+                      <p className="text-xs text-muted-foreground">
+                        Created By
+                      </p>
                       <p className="text-sm font-medium text-foreground">
-                        {creator?.created_by_user?.name || creator?.created_by_user?.email || 'Unknown'}
+                        {creator?.created_by_user?.name ||
+                          creator?.created_by_user?.email ||
+                          "Unknown"}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDate(creator?.created_at)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Last Updated</p>
+                      <p className="text-xs text-muted-foreground">
+                        Last Updated
+                      </p>
                       <p className="text-sm font-medium text-foreground">
-                        {creator?.updated_by_user?.name || creator?.updated_by_user?.email || 'Unknown'}
+                        {creator?.updated_by_user?.name ||
+                          creator?.updated_by_user?.email ||
+                          "Unknown"}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDate(creator?.updated_at)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Creator ID</p>
+                      <p className="text-xs text-muted-foreground">
+                        Creator ID
+                      </p>
                       <p className="text-sm font-mono text-foreground break-all">
                         {creator?.id}
                       </p>
@@ -1025,8 +1243,8 @@ export default function EditCreatorPage() {
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={saving}
                     className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
@@ -1061,10 +1279,12 @@ export default function EditCreatorPage() {
             </CardHeader>
             <CardContent className="p-6">
               <p className="text-foreground mb-2">
-                Are you sure you want to delete <strong>{creator?.name}</strong>?
+                Are you sure you want to delete <strong>{creator?.name}</strong>
+                ?
               </p>
               <p className="text-sm text-muted-foreground mb-6">
-                This action cannot be undone. All associated data will be permanently removed.
+                This action cannot be undone. All associated data will be
+                permanently removed.
               </p>
               <div className="flex justify-end gap-3">
                 <Button
